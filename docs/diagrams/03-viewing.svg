@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1390" viewBox="0 0 1680 1390" role="img" aria-labelledby="title desc">
+<title id="title">Browse, watch, and continue</title><desc id="desc">The browser uses the Worker; library queries and video bytes follow different paths. Proposed architecture from PRD.md, not a deployed system.</desc>
+<defs>
+<marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#2563A6" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<marker id="teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#167D78" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<marker id="gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#748399" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<marker id="purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#7752A3" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<marker id="amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#AF7322" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<symbol id="browser" viewBox="0 0 64 64"><rect x="5" y="8" width="54" height="39" rx="4"/><path d="M5 18h54M24 47v9m16-9v9M18 57h28"/><circle cx="11" cy="13" r="1"/><circle cx="17" cy="13" r="1"/><path d="m28 26 12 7-12 7Z"/></symbol>
+<symbol id="shield" viewBox="0 0 64 64"><path d="M32 4 54 13v16c0 15-11 24-22 31C21 53 10 44 10 29V13Z"/><path d="m21 31 8 8 15-17"/></symbol>
+<symbol id="worker" viewBox="0 0 64 64"><rect x="12" y="12" width="40" height="40" rx="7"/><path d="M22 4v8m10-8v8m10-8v8M22 52v8m10-8v8m10-8v8M4 22h8m-8 10h8m-8 10h8m40-20h8m-8 10h8m-8 10h8m-35-20-7 10h10l-7 10"/></symbol>
+<symbol id="database" viewBox="0 0 64 64"><ellipse cx="32" cy="12" rx="24" ry="9"/><path d="M8 12v38c0 12 48 12 48 0V12M8 30c0 12 48 12 48 0"/></symbol>
+<symbol id="bucket" viewBox="0 0 64 64"><ellipse cx="32" cy="12" rx="25" ry="9"/><path d="m7 12 6 40c2 10 36 10 38 0l6-40"/><path d="m27 29 13 8-13 8Z"/></symbol>
+<symbol id="poster" viewBox="0 0 64 64"><ellipse cx="32" cy="12" rx="25" ry="9"/><path d="m7 12 6 40c2 10 36 10 38 0l6-40"/><rect x="20" y="26" width="24" height="20" rx="2"/><path d="m21 42 7-7 5 5 4-4 6 6"/><circle cx="37" cy="31" r="2"/></symbol>
+<symbol id="backup" viewBox="0 0 64 64"><ellipse cx="32" cy="12" rx="25" ry="9"/><path d="m7 12 6 40c2 10 36 10 38 0l6-40"/><rect x="22" y="25" width="20" height="24" rx="2"/><path d="M26 32h12m-12 6h12m-12 6h8"/></symbol>
+<symbol id="processor" viewBox="0 0 64 64"><rect x="5" y="6" width="54" height="51" rx="5"/><path d="M5 18h54m-44 9 7 6-7 6m14 1h10M45 27v16m-4-12h8m-8 8h8"/></symbol>
+<symbol id="owner" viewBox="0 0 64 64"><circle cx="25" cy="17" r="10"/><path d="M7 52v-6c0-18 34-18 34 0v6"/><path d="m47 31 11 5v9c0 8-5 12-11 16-6-4-11-8-11-16v-9Z"/><path d="m42 44 4 4 7-8"/></symbol>
+<symbol id="clock" viewBox="0 0 64 64"><circle cx="31" cy="33" r="25"/><path d="M31 17v17l13 8M19 4h24"/></symbol>
+<symbol id="folder" viewBox="0 0 64 64"><path d="M5 18V9h21l8 9h25v36H5Z"/><path d="M5 26h54"/></symbol>
+</defs>
+<rect width="1680" height="100%" fill="#F7F9FC"/>
+<text x="48" y="56" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#2563A6" font-weight="700" text-anchor="start" letter-spacing="2">EMBYFIN  /  03</text>
+<text x="48" y="108" font-family="Arial, Helvetica, sans-serif" font-size="42" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">Browse, watch, and continue</text>
+<text x="48" y="145" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">The browser uses the Worker; library queries and video bytes follow different paths.</text>
+<rect x="1300" y="29" width="332" height="34" rx="9" fill="#E8EDF5" stroke="#E8EDF5" stroke-width="1.7"/>
+<text x="1466.0" y="52" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#52647A" font-weight="700" text-anchor="middle" letter-spacing="0">PROPOSED · NOT DEPLOYED</text>
+<rect x="36" y="187" width="1608" height="353" rx="22" fill="#FFFFFF" stroke="#DBE3ED" stroke-width="1.7"/>
+<rect x="60" y="209" width="215" height="34" rx="9" fill="#EDF2FB" stroke="#EDF2FB" stroke-width="1.7"/>
+<text x="167.5" y="232" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#2563A6" font-weight="700" text-anchor="middle" letter-spacing="0">A  BROWSE / SEARCH</text>
+<polyline points="295,364 358,364" fill="none" stroke="#2563A6" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<text x="326" y="342" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#2563A6" font-weight="400" text-anchor="middle" letter-spacing="0">HTTPS</text>
+<polyline points="557,364 635,364" fill="none" stroke="#2563A6" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<text x="596" y="342" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#2563A6" font-weight="400" text-anchor="middle" letter-spacing="0">Identity</text>
+<polyline points="958,322 1250,322" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" marker-start="url(#gray)" stroke-dasharray="8 7"/>
+<text x="1104" y="302" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#748399" font-weight="400" text-anchor="middle" letter-spacing="0">Catalog / grants / history</text>
+<polyline points="958,443 1250,443" fill="none" stroke="#167D78" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#teal)" marker-start="url(#teal)"/>
+<text x="1103" y="475" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#167D78" font-weight="400" text-anchor="middle" letter-spacing="0">Posters / image bytes</text>
+<rect x="60" y="272" width="235" height="205" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#browser" x="143.5" y="289" width="68" height="68" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="177.5" y="387" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">Web browser</text>
+<text x="177.5" y="417" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Library + Folder view</text>
+<rect x="358" y="272" width="199" height="205" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#shield" x="423.5" y="289" width="68" height="68" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="457.5" y="387" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">Access</text>
+<text x="457.5" y="417" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Admit identity</text>
+<rect x="635" y="272" width="323" height="205" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#worker" x="762.5" y="289" width="68" height="68" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="796.5" y="387" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">Worker</text>
+<text x="796.5" y="417" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Check library permissions</text>
+<rect x="1250" y="265" width="350" height="116" rx="18" fill="#FFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#database" x="1268" y="292.0" width="62" height="62" fill="none" stroke="#7752A3" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1348" y="320.0" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">D1</text>
+<text x="1348" y="350.0" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Names · paths · state</text>
+<rect x="1250" y="401" width="350" height="116" rx="18" fill="#FFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#poster" x="1268" y="428.0" width="62" height="62" fill="none" stroke="#167D78" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1348" y="456.0" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">R2 generated</text>
+<text x="1348" y="486.0" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Private posters</text>
+<text x="61" y="516" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Search and folder navigation read D1. They do not scan the bucket or open every video.</text>
+<rect x="36" y="565" width="1608" height="607" rx="22" fill="#F0F4FB" stroke="#CBD8EA" stroke-width="1.7"/>
+<rect x="60" y="587" width="251" height="34" rx="9" fill="#E0EAF9" stroke="#E0EAF9" stroke-width="1.7"/>
+<text x="185.5" y="610" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#2563A6" font-weight="700" text-anchor="middle" letter-spacing="0">B  PLAYBACK / PROGRESS</text>
+<text x="336" y="613" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Every new media request checks access; original bytes stream with backpressure.</text>
+<use href="#browser" x="132" y="640" width="56" height="56" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="160" y="727" font-family="Arial, Helvetica, sans-serif" font-size="23" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">Browser</text>
+<line x1="160" y1="748" x2="160" y2="1141" stroke="#B9C7D9" stroke-width="1.5" stroke-dasharray="4 7"/>
+<use href="#worker" x="527" y="640" width="56" height="56" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="555" y="727" font-family="Arial, Helvetica, sans-serif" font-size="23" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">Worker + adapter</text>
+<line x1="555" y1="748" x2="555" y2="1141" stroke="#B9C7D9" stroke-width="1.5" stroke-dasharray="4 7"/>
+<use href="#database" x="1000" y="640" width="56" height="56" fill="none" stroke="#7752A3" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1028" y="727" font-family="Arial, Helvetica, sans-serif" font-size="23" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">D1</text>
+<line x1="1028" y1="748" x2="1028" y2="1141" stroke="#B9C7D9" stroke-width="1.5" stroke-dasharray="4 7"/>
+<use href="#bucket" x="1457" y="640" width="56" height="56" fill="none" stroke="#AF7322" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1485" y="727" font-family="Arial, Helvetica, sans-serif" font-size="23" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">R2 originals</text>
+<line x1="1485" y1="748" x2="1485" y2="1141" stroke="#B9C7D9" stroke-width="1.5" stroke-dasharray="4 7"/>
+<polyline points="160,783 555,783" fill="none" stroke="#2563A6" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<text x="357" y="768" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563A6" font-weight="400" text-anchor="middle" letter-spacing="0">1  GET / HEAD · Range</text>
+<polyline points="555,842 1028,842" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="791" y="827" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#748399" font-weight="400" text-anchor="middle" letter-spacing="0">2  Check enabled user + library grant</text>
+<polyline points="555,901 1485,901" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="1107" y="886" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#748399" font-weight="400" text-anchor="middle" letter-spacing="0">3  Conditional read · verify source revision</text>
+<polyline points="1485,960 555,960" fill="none" stroke="#167D78" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#teal)"/>
+<text x="1107" y="945" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#167D78" font-weight="400" text-anchor="middle" letter-spacing="0">4  Original video bytes · 200 / 206</text>
+<polyline points="555,1019 160,1019" fill="none" stroke="#167D78" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#teal)"/>
+<text x="357" y="1004" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#167D78" font-weight="400" text-anchor="middle" letter-spacing="0">5  Stream to player</text>
+<polyline points="160,1078 555,1078" fill="none" stroke="#2563A6" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<text x="357" y="1063" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563A6" font-weight="400" text-anchor="middle" letter-spacing="0">6  Saved playback position</text>
+<polyline points="555,1137 1028,1137" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="791" y="1122" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#748399" font-weight="400" text-anchor="middle" letter-spacing="0">7  Per-user progress / last watched</text>
+<rect x="49" y="1200" width="756" height="74" rx="12" fill="#FFF7E9" stroke="#E3C891" stroke-width="1.7" stroke-dasharray="5 4"/>
+<text x="65" y="1229" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#AF7322" font-weight="700" text-anchor="start" letter-spacing="0">Playback errors: keep uncertainty explicit</text>
+<text x="65" y="1255" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Check login / availability; allow an unknown or device-specific failure.</text>
+<rect x="827" y="1200" width="804" height="74" rx="12" fill="#FFF7E9" stroke="#E3C891" stroke-width="1.7" stroke-dasharray="5 4"/>
+<text x="843" y="1229" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#AF7322" font-weight="700" text-anchor="start" letter-spacing="0">Account and content changes clear stale state</text>
+<text x="843" y="1255" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Sign-out clears visible account state; replacement clears recent activity.</text>
+<polyline points="48,1320 95,1320" fill="none" stroke="#2563A6" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<text x="108" y="1326" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">HTTPS</text>
+<polyline points="255,1320 302,1320" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="315" y="1326" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">App data / control</text>
+<polyline points="550,1320 597,1320" fill="none" stroke="#167D78" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#teal)"/>
+<text x="610" y="1326" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Media / signed I/O</text>
+<polyline points="870,1320 917,1320" fill="none" stroke="#7752A3" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#purple)" stroke-dasharray="8 7"/>
+<text x="930" y="1326" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Owner controls</text>
+<rect x="1140" y="1306" width="25" height="25" rx="5" fill="#FFF7E9" stroke="#E3C891" stroke-width="1.7" stroke-dasharray="4 3"/>
+<text x="1178" y="1326" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Release requirement / gate</text>
+<text x="48" y="1361" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Direct originals only · no adaptive renditions or automatic transcoding. Range contract also includes 416 for unsatisfiable ranges.</text>
+</svg>

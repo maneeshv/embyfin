@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1450" viewBox="0 0 1680 1450" role="img" aria-labelledby="title desc">
+<title id="title">High-level architecture</title><desc id="desc">Cloudflare-only baseline: existing videos in R2, application state in D1. Proposed architecture from PRD.md, not a deployed system.</desc>
+<defs>
+<marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#2563A6" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<marker id="teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#167D78" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<marker id="gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#748399" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<marker id="purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#7752A3" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<marker id="amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#AF7322" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<symbol id="browser" viewBox="0 0 64 64"><rect x="5" y="8" width="54" height="39" rx="4"/><path d="M5 18h54M24 47v9m16-9v9M18 57h28"/><circle cx="11" cy="13" r="1"/><circle cx="17" cy="13" r="1"/><path d="m28 26 12 7-12 7Z"/></symbol>
+<symbol id="shield" viewBox="0 0 64 64"><path d="M32 4 54 13v16c0 15-11 24-22 31C21 53 10 44 10 29V13Z"/><path d="m21 31 8 8 15-17"/></symbol>
+<symbol id="worker" viewBox="0 0 64 64"><rect x="12" y="12" width="40" height="40" rx="7"/><path d="M22 4v8m10-8v8m10-8v8M22 52v8m10-8v8m10-8v8M4 22h8m-8 10h8m-8 10h8m40-20h8m-8 10h8m-8 10h8m-35-20-7 10h10l-7 10"/></symbol>
+<symbol id="database" viewBox="0 0 64 64"><ellipse cx="32" cy="12" rx="24" ry="9"/><path d="M8 12v38c0 12 48 12 48 0V12M8 30c0 12 48 12 48 0"/></symbol>
+<symbol id="bucket" viewBox="0 0 64 64"><ellipse cx="32" cy="12" rx="25" ry="9"/><path d="m7 12 6 40c2 10 36 10 38 0l6-40"/><path d="m27 29 13 8-13 8Z"/></symbol>
+<symbol id="poster" viewBox="0 0 64 64"><ellipse cx="32" cy="12" rx="25" ry="9"/><path d="m7 12 6 40c2 10 36 10 38 0l6-40"/><rect x="20" y="26" width="24" height="20" rx="2"/><path d="m21 42 7-7 5 5 4-4 6 6"/><circle cx="37" cy="31" r="2"/></symbol>
+<symbol id="backup" viewBox="0 0 64 64"><ellipse cx="32" cy="12" rx="25" ry="9"/><path d="m7 12 6 40c2 10 36 10 38 0l6-40"/><rect x="22" y="25" width="20" height="24" rx="2"/><path d="M26 32h12m-12 6h12m-12 6h8"/></symbol>
+<symbol id="processor" viewBox="0 0 64 64"><rect x="5" y="6" width="54" height="51" rx="5"/><path d="M5 18h54m-44 9 7 6-7 6m14 1h10M45 27v16m-4-12h8m-8 8h8"/></symbol>
+<symbol id="owner" viewBox="0 0 64 64"><circle cx="25" cy="17" r="10"/><path d="M7 52v-6c0-18 34-18 34 0v6"/><path d="m47 31 11 5v9c0 8-5 12-11 16-6-4-11-8-11-16v-9Z"/><path d="m42 44 4 4 7-8"/></symbol>
+<symbol id="clock" viewBox="0 0 64 64"><circle cx="31" cy="33" r="25"/><path d="M31 17v17l13 8M19 4h24"/></symbol>
+<symbol id="folder" viewBox="0 0 64 64"><path d="M5 18V9h21l8 9h25v36H5Z"/><path d="M5 26h54"/></symbol>
+</defs>
+<rect width="1680" height="100%" fill="#F7F9FC"/>
+<text x="48" y="56" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#2563A6" font-weight="700" text-anchor="start" letter-spacing="2">EMBYFIN  /  01</text>
+<text x="48" y="108" font-family="Arial, Helvetica, sans-serif" font-size="42" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">High-level architecture</text>
+<text x="48" y="145" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Cloudflare-only baseline: existing videos in R2, application state in D1.</text>
+<rect x="1300" y="29" width="332" height="34" rx="9" fill="#E8EDF5" stroke="#E8EDF5" stroke-width="1.7"/>
+<text x="1466.0" y="52" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#52647A" font-weight="700" text-anchor="middle" letter-spacing="0">PROPOSED · NOT DEPLOYED</text>
+<rect x="345" y="180" width="1287" height="1170" rx="24" fill="#FFF5EC" stroke="#E9CBAF" stroke-width="1.7"/>
+<text x="371" y="218" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">Cloudflare</text>
+<text x="535" y="218" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Provider boundary · not a private network</text>
+<polyline points="285,421 390,421" fill="none" stroke="#2563A6" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<text x="337" y="400" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#2563A6" font-weight="400" text-anchor="middle" letter-spacing="0">HTTPS</text>
+<polyline points="600,421 690,421" fill="none" stroke="#2563A6" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<text x="645" y="399" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#2563A6" font-weight="400" text-anchor="middle" letter-spacing="0">Identity</text>
+<polyline points="1040,324 1240,324" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" marker-start="url(#gray)" stroke-dasharray="8 7"/>
+<text x="1138" y="303" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#748399" font-weight="400" text-anchor="middle" letter-spacing="0">SQL</text>
+<polyline points="1040,550 1150,550 1150,505 1240,505" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="1140" y="476" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">List / HEAD / Range</text>
+<polyline points="1040,594 1115,594 1115,705 1240,705" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="1170" y="732" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Poster reads</text>
+<polyline points="1040,615 1070,615 1070,1048 1370,1048 1370,1024" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="1245" y="1076" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">SQL exports</text>
+<polyline points="625,806 645,806 645,590 690,590" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="501" y="688" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Scan · dispatch · export</text>
+<polyline points="865,638 865,780" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="963" y="740" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#748399" font-weight="400" text-anchor="middle" letter-spacing="0">Dispatch / renew</text>
+<polyline points="865,920 865,1100" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="970" y="1006" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#748399" font-weight="400" text-anchor="middle" letter-spacing="0">Start / stop</text>
+<text x="970" y="1035" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Hard deadline</text>
+<polyline points="690,1190 655,1190 655,616 690,616" fill="none" stroke="#2563A6" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)" marker-start="url(#blue)"/>
+<text x="490" y="1012" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563A6" font-weight="400" text-anchor="middle" letter-spacing="0">HTTPS · job API</text>
+<text x="490" y="1041" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#2563A6" font-weight="400" text-anchor="middle" letter-spacing="0">Claims · heartbeats · results</text>
+<polyline points="185,1050 185,615 494,615 494,535" fill="none" stroke="#7752A3" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#purple)" stroke-dasharray="8 7"/>
+<text x="307" y="595" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#7752A3" font-weight="400" text-anchor="middle" letter-spacing="0">Owner settings</text>
+<polyline points="1200,1215 1599,1215 1599,505 1500,505" fill="none" stroke="#167D78" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#teal)"/>
+<text x="1393" y="1200" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#167D78" font-weight="400" text-anchor="middle" letter-spacing="0">HTTPS · signed reads</text>
+<polyline points="1200,1158 1544,1158 1544,705 1500,705" fill="none" stroke="#167D78" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#teal)"/>
+<text x="1365" y="1138" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#167D78" font-weight="400" text-anchor="middle" letter-spacing="0">HTTPS · signed uploads</text>
+<rect x="45" y="321" width="240" height="224" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#browser" x="131.0" y="338" width="68" height="68" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="165.0" y="436" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">Web browser</text>
+<text x="165.0" y="466" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Library + Folders</text>
+<text x="165.0" y="493" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Native video player</text>
+<rect x="390" y="321" width="210" height="214" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#shield" x="461.0" y="338" width="68" height="68" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="495.0" y="436" font-family="Arial, Helvetica, sans-serif" font-size="23" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">Cloudflare Access</text>
+<text x="495.0" y="466" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Sign-in / admission</text>
+<rect x="690" y="278" width="350" height="360" rx="18" fill="#FFFFFF" stroke="#AABFD8" stroke-width="1.7"/>
+<use href="#worker" x="824" y="303" width="80" height="80" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="865" y="425" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">Cloudflare Worker</text>
+<text x="865" y="461" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">UI · API · scans · streams</text>
+<text x="865" y="495" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#2563A6" font-weight="400" text-anchor="middle" letter-spacing="0">Checks users + library grants</text>
+<rect x="714" y="525" width="302" height="86" rx="12" fill="#EDF4FD" stroke="#C4D7EC" stroke-width="1.7"/>
+<text x="865" y="558" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#2563A6" font-weight="700" text-anchor="middle" letter-spacing="0">Storage adapter</text>
+<text x="865" y="587" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">R2 implementation · app code</text>
+<rect x="1240" y="241" width="260" height="151" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#database" x="1336.0" y="258" width="68" height="68" fill="none" stroke="#7752A3" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1370.0" y="356" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">D1</text>
+<text x="1370.0" y="386" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Catalog · grants · history</text>
+<rect x="1240" y="425" width="260" height="171" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#bucket" x="1336.0" y="442" width="68" height="68" fill="none" stroke="#AF7322" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1370.0" y="540" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">R2 · originals</text>
+<text x="1370.0" y="570" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">~600 GB · read-only</text>
+<rect x="1240" y="627" width="260" height="160" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#poster" x="1336.0" y="644" width="68" height="68" fill="none" stroke="#167D78" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1370.0" y="742" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">R2 · generated</text>
+<text x="1370.0" y="772" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Private poster images</text>
+<rect x="1240" y="854" width="260" height="170" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#backup" x="1336.0" y="871" width="68" height="68" fill="none" stroke="#7752A3" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1370.0" y="969" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">R2 · backups</text>
+<text x="1370.0" y="999" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Private SQL exports</text>
+<rect x="375" y="730" width="250" height="174" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#clock" x="466.0" y="747" width="68" height="68" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="500.0" y="845" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">Cron Triggers</text>
+<text x="500.0" y="875" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">1m tick · due work</text>
+<rect x="690" y="780" width="350" height="140" rx="18" fill="#FFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#worker" x="708" y="819.0" width="62" height="62" fill="none" stroke="#7752A3" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="788" y="847.0" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">Durable Object</text>
+<text x="788" y="877.0" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Run lifecycle · deadlines</text>
+<rect x="690" y="1100" width="510" height="140" rx="18" fill="#FFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#processor" x="708" y="1139.0" width="62" height="62" fill="none" stroke="#167D78" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="788" y="1167.0" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">Cloudflare Container</text>
+<text x="788" y="1197.0" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Python / uv + FFprobe / FFmpeg</text>
+<rect x="45" y="1050" width="240" height="160" rx="18" fill="#FFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#owner" x="63" y="1099.0" width="62" height="62" fill="none" stroke="#7752A3" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="143" y="1127.0" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">Owner</text>
+<text x="143" y="1157.0" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Grants · scans</text>
+<rect x="369" y="1260" width="804" height="74" rx="12" fill="#FFF7E9" stroke="#E3C891" stroke-width="1.7" stroke-dasharray="5 4"/>
+<text x="385" y="1289" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#AF7322" font-weight="700" text-anchor="start" letter-spacing="0">Phase 0: accept measured playback, thumbnails, and budgets</text>
+<text x="385" y="1315" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">One instance · bounded scratch · no durable media mirror</text>
+<rect x="1200" y="1270" width="400" height="57" rx="12" fill="#F3F5F9" stroke="#A8B2C0" stroke-width="1.7" stroke-dasharray="6 5"/>
+<text x="1400" y="1305" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#52647A" font-weight="700" text-anchor="middle" letter-spacing="0">Later: AWS S3 storage adapter</text>
+<polyline points="48,1380 95,1380" fill="none" stroke="#2563A6" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<text x="108" y="1386" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">HTTPS</text>
+<polyline points="255,1380 302,1380" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="315" y="1386" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">App data / control</text>
+<polyline points="550,1380 597,1380" fill="none" stroke="#167D78" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#teal)"/>
+<text x="610" y="1386" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Media / signed I/O</text>
+<polyline points="870,1380 917,1380" fill="none" stroke="#7752A3" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#purple)" stroke-dasharray="8 7"/>
+<text x="930" y="1386" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Owner controls</text>
+<rect x="1140" y="1366" width="25" height="25" rx="5" fill="#FFF7E9" stroke="#E3C891" stroke-width="1.7" stroke-dasharray="4 3"/>
+<text x="1178" y="1386" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Release requirement / gate</text>
+<text x="48" y="1421" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Responses return along the request path. No processor → D1 or backup access. Operator recovery is described in the guide.</text>
+</svg>

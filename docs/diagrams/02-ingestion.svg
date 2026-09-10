@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1650" viewBox="0 0 1680 1650" role="img" aria-labelledby="title desc">
+<title id="title">From bucket to searchable library</title><desc id="desc">Discovery is fast catalog work; thumbnails require a separate video-processing step. Proposed architecture from PRD.md, not a deployed system.</desc>
+<defs>
+<marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#2563A6" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<marker id="teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#167D78" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<marker id="gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#748399" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<marker id="purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#7752A3" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<marker id="amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#AF7322" stroke-width="1.7" stroke-linejoin="round"/></marker>
+<symbol id="browser" viewBox="0 0 64 64"><rect x="5" y="8" width="54" height="39" rx="4"/><path d="M5 18h54M24 47v9m16-9v9M18 57h28"/><circle cx="11" cy="13" r="1"/><circle cx="17" cy="13" r="1"/><path d="m28 26 12 7-12 7Z"/></symbol>
+<symbol id="shield" viewBox="0 0 64 64"><path d="M32 4 54 13v16c0 15-11 24-22 31C21 53 10 44 10 29V13Z"/><path d="m21 31 8 8 15-17"/></symbol>
+<symbol id="worker" viewBox="0 0 64 64"><rect x="12" y="12" width="40" height="40" rx="7"/><path d="M22 4v8m10-8v8m10-8v8M22 52v8m10-8v8m10-8v8M4 22h8m-8 10h8m-8 10h8m40-20h8m-8 10h8m-8 10h8m-35-20-7 10h10l-7 10"/></symbol>
+<symbol id="database" viewBox="0 0 64 64"><ellipse cx="32" cy="12" rx="24" ry="9"/><path d="M8 12v38c0 12 48 12 48 0V12M8 30c0 12 48 12 48 0"/></symbol>
+<symbol id="bucket" viewBox="0 0 64 64"><ellipse cx="32" cy="12" rx="25" ry="9"/><path d="m7 12 6 40c2 10 36 10 38 0l6-40"/><path d="m27 29 13 8-13 8Z"/></symbol>
+<symbol id="poster" viewBox="0 0 64 64"><ellipse cx="32" cy="12" rx="25" ry="9"/><path d="m7 12 6 40c2 10 36 10 38 0l6-40"/><rect x="20" y="26" width="24" height="20" rx="2"/><path d="m21 42 7-7 5 5 4-4 6 6"/><circle cx="37" cy="31" r="2"/></symbol>
+<symbol id="backup" viewBox="0 0 64 64"><ellipse cx="32" cy="12" rx="25" ry="9"/><path d="m7 12 6 40c2 10 36 10 38 0l6-40"/><rect x="22" y="25" width="20" height="24" rx="2"/><path d="M26 32h12m-12 6h12m-12 6h8"/></symbol>
+<symbol id="processor" viewBox="0 0 64 64"><rect x="5" y="6" width="54" height="51" rx="5"/><path d="M5 18h54m-44 9 7 6-7 6m14 1h10M45 27v16m-4-12h8m-8 8h8"/></symbol>
+<symbol id="owner" viewBox="0 0 64 64"><circle cx="25" cy="17" r="10"/><path d="M7 52v-6c0-18 34-18 34 0v6"/><path d="m47 31 11 5v9c0 8-5 12-11 16-6-4-11-8-11-16v-9Z"/><path d="m42 44 4 4 7-8"/></symbol>
+<symbol id="clock" viewBox="0 0 64 64"><circle cx="31" cy="33" r="25"/><path d="M31 17v17l13 8M19 4h24"/></symbol>
+<symbol id="folder" viewBox="0 0 64 64"><path d="M5 18V9h21l8 9h25v36H5Z"/><path d="M5 26h54"/></symbol>
+</defs>
+<rect width="1680" height="100%" fill="#F7F9FC"/>
+<text x="48" y="56" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#2563A6" font-weight="700" text-anchor="start" letter-spacing="2">EMBYFIN  /  02</text>
+<text x="48" y="108" font-family="Arial, Helvetica, sans-serif" font-size="42" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">From bucket to searchable library</text>
+<text x="48" y="145" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Discovery is fast catalog work; thumbnails require a separate video-processing step.</text>
+<rect x="1300" y="29" width="332" height="34" rx="9" fill="#E8EDF5" stroke="#E8EDF5" stroke-width="1.7"/>
+<text x="1466.0" y="52" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#52647A" font-weight="700" text-anchor="middle" letter-spacing="0">PROPOSED · NOT DEPLOYED</text>
+<rect x="36" y="188" width="1608" height="321" rx="22" fill="#FFFFFF" stroke="#DBE3ED" stroke-width="1.7"/>
+<rect x="59" y="208" width="176" height="34" rx="9" fill="#EDF2FB" stroke="#EDF2FB" stroke-width="1.7"/>
+<text x="147.0" y="231" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#2563A6" font-weight="700" text-anchor="middle" letter-spacing="0">A  DISCOVER</text>
+<text x="261" y="234" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Manual / daily start · Cron resumes bounded pages</text>
+<polyline points="283,350 358,350" fill="none" stroke="#2563A6" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<text x="320" y="325" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#2563A6" font-weight="400" text-anchor="middle" letter-spacing="0">Start</text>
+<polyline points="570,350 648,350" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="609" y="325" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#748399" font-weight="400" text-anchor="middle" letter-spacing="0">List prefix</text>
+<polyline points="868,350 948,350" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="908" y="325" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#748399" font-weight="400" text-anchor="middle" letter-spacing="0">Page</text>
+<polyline points="1178,350 1258,350" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="1218" y="325" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#748399" font-weight="400" text-anchor="middle" letter-spacing="0">Commit</text>
+<rect x="62" y="265" width="221" height="188" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#clock" x="138.5" y="282" width="68" height="68" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="172.5" y="380" font-family="Arial, Helvetica, sans-serif" font-size="23" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">Owner / Cron</text>
+<text x="172.5" y="410" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Start or resume</text>
+<rect x="358" y="265" width="212" height="188" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#worker" x="430.0" y="282" width="68" height="68" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="464.0" y="380" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">Worker</text>
+<text x="464.0" y="410" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">List one page</text>
+<rect x="648" y="265" width="220" height="188" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#bucket" x="724.0" y="282" width="68" height="68" fill="none" stroke="#AF7322" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="758.0" y="380" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">R2 originals</text>
+<text x="758.0" y="410" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Keys · sizes · revisions</text>
+<rect x="948" y="265" width="230" height="188" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#worker" x="1029.0" y="282" width="68" height="68" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1063.0" y="380" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">Worker</text>
+<text x="1063.0" y="410" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Normalize + upsert</text>
+<rect x="1258" y="265" width="340" height="188" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#database" x="1394.0" y="282" width="68" height="68" fill="none" stroke="#7752A3" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1428.0" y="380" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">D1 catalog</text>
+<text x="1428.0" y="410" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Rows + cursor + media jobs</text>
+<text x="61" y="487" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Commit records before advancing the cursor. Listing does not reveal duration, codecs, or thumbnails.</text>
+<rect x="36" y="533" width="1608" height="309" rx="22" fill="#F0F4FB" stroke="#CBD8EA" stroke-width="1.7"/>
+<rect x="59" y="553" width="176" height="34" rx="9" fill="#E0EAF9" stroke="#E0EAF9" stroke-width="1.7"/>
+<text x="147.0" y="576" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#2563A6" font-weight="700" text-anchor="middle" letter-spacing="0">B  DISPATCH</text>
+<text x="261" y="579" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">In Cloudflare · start only when due jobs exist · 15-minute enrichment cadence</text>
+<polyline points="332,697 393,697" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="362" y="676" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#748399" font-weight="400" text-anchor="middle" letter-spacing="0">Tick</text>
+<polyline points="653,697 742,697" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="697" y="676" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#748399" font-weight="400" text-anchor="middle" letter-spacing="0">RPC</text>
+<polyline points="1132,697 1215,697" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="1174" y="676" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#748399" font-weight="400" text-anchor="middle" letter-spacing="0">Start</text>
+<rect x="62" y="641" width="270" height="120" rx="18" fill="#FFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#clock" x="80" y="670.0" width="62" height="62" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="160" y="698.0" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">Cron Triggers</text>
+<text x="160" y="728.0" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">1m tick</text>
+<rect x="393" y="641" width="260" height="120" rx="18" fill="#FFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#worker" x="411" y="670.0" width="62" height="62" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="491" y="698.0" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">Worker</text>
+<text x="491" y="728.0" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Due work only</text>
+<rect x="742" y="641" width="390" height="120" rx="18" fill="#FFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#worker" x="760" y="670.0" width="62" height="62" fill="none" stroke="#7752A3" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="840" y="698.0" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">Durable Object</text>
+<text x="840" y="728.0" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Generation · deadline</text>
+<rect x="1215" y="641" width="383" height="120" rx="18" fill="#FFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#processor" x="1233" y="670.0" width="62" height="62" fill="none" stroke="#167D78" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1313" y="698.0" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">Container</text>
+<text x="1313" y="728.0" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Bounded FFmpeg batch</text>
+<text x="61" y="815" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">One active run · deadline survives restarts · stop when idle · no container → D1 connection</text>
+<rect x="36" y="866" width="1608" height="664" rx="22" fill="#EFF8F7" stroke="#CAE2DD" stroke-width="1.7"/>
+<rect x="59" y="886" width="176" height="34" rx="9" fill="#DFF0EC" stroke="#DFF0EC" stroke-width="1.7"/>
+<text x="147.0" y="909" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#167D78" font-weight="700" text-anchor="middle" letter-spacing="0">C  ENRICH</text>
+<text x="261" y="912" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Cloudflare Container · one video at a time · private object access</text>
+<polyline points="866,1026 1132,1026" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" marker-start="url(#gray)" stroke-dasharray="8 7"/>
+<text x="999" y="1005" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#748399" font-weight="400" text-anchor="middle" letter-spacing="0">Lease / finalize</text>
+<polyline points="632,1231 632,1101" fill="none" stroke="#2563A6" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)" marker-start="url(#blue)"/>
+<text x="477" y="1154" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#2563A6" font-weight="400" text-anchor="middle" letter-spacing="0">1  Claim job</text>
+<text x="477" y="1183" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#2563A6" font-weight="400" text-anchor="middle" letter-spacing="0">+ signed access</text>
+<polyline points="819,1231 819,1101" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="972" y="1154" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">4  Report completion</text>
+<text x="972" y="1183" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Revision must still match</text>
+<polyline points="378,1308 552,1308" fill="none" stroke="#167D78" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#teal)"/>
+<text x="465" y="1284" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#167D78" font-weight="400" text-anchor="middle" letter-spacing="0">2  Video bytes</text>
+<polyline points="866,1308 1132,1308" fill="none" stroke="#167D78" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#teal)"/>
+<text x="999" y="1284" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#167D78" font-weight="400" text-anchor="middle" letter-spacing="0">3  Store poster</text>
+<rect x="552" y="965" width="314" height="136" rx="18" fill="#FFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#worker" x="570" y="1002.0" width="62" height="62" fill="none" stroke="#2563A6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="650" y="1030.0" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">Worker job API</text>
+<text x="650" y="1060.0" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Machine authentication</text>
+<rect x="1132" y="965" width="466" height="136" rx="18" fill="#FFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#database" x="1150" y="1002.0" width="62" height="62" fill="none" stroke="#7752A3" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1230" y="1030.0" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#17283E" font-weight="700" text-anchor="start" letter-spacing="0">D1</text>
+<text x="1230" y="1060.0" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Job state + technical metadata</text>
+<rect x="63" y="1231" width="315" height="195" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#bucket" x="186.5" y="1248" width="68" height="68" fill="none" stroke="#AF7322" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="220.5" y="1346" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">R2 originals</text>
+<text x="220.5" y="1376" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Read assigned object only</text>
+<rect x="552" y="1231" width="314" height="195" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#processor" x="675.0" y="1248" width="68" height="68" fill="none" stroke="#167D78" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="709.0" y="1346" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">FFprobe / FFmpeg</text>
+<text x="709.0" y="1376" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Probe + decode a frame</text>
+<rect x="1132" y="1231" width="466" height="195" rx="18" fill="#FFFFFF" stroke="#D9E1EA" stroke-width="1.7"/>
+<use href="#poster" x="1331.0" y="1248" width="68" height="68" fill="none" stroke="#167D78" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1365.0" y="1346" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#17283E" font-weight="700" text-anchor="middle" letter-spacing="0">R2 generated-assets bucket</text>
+<text x="1365.0" y="1376" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#52647A" font-weight="400" text-anchor="middle" letter-spacing="0">Versioned poster · private access</text>
+<text x="80" y="1038" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#167D78" font-weight="400" text-anchor="start" letter-spacing="0">Direct R2 access uses</text>
+<text x="80" y="1068" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#167D78" font-weight="400" text-anchor="start" letter-spacing="0">short-lived signed URLs.</text>
+<text x="80" y="1102" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">No permanent source credentials</text>
+<text x="80" y="1129" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">are sent to the processor.</text>
+<text x="66" y="1471" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Upload first, mark ready second.</text>
+<text x="66" y="1500" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Stale results cannot replace current metadata or posters.</text>
+<rect x="910" y="1444" width="688" height="74" rx="12" fill="#FFF7E9" stroke="#E3C891" stroke-width="1.7" stroke-dasharray="5 4"/>
+<text x="926" y="1473" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#AF7322" font-weight="700" text-anchor="start" letter-spacing="0">Lease + revision checks reject stale completion</text>
+<text x="926" y="1499" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">A restart revalidates its run; an expired job cannot publish.</text>
+<polyline points="48,1580 95,1580" fill="none" stroke="#2563A6" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<text x="108" y="1586" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">HTTPS</text>
+<polyline points="255,1580 302,1580" fill="none" stroke="#748399" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#gray)" stroke-dasharray="8 7"/>
+<text x="315" y="1586" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">App data / control</text>
+<polyline points="550,1580 597,1580" fill="none" stroke="#167D78" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#teal)"/>
+<text x="610" y="1586" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Media / signed I/O</text>
+<polyline points="870,1580 917,1580" fill="none" stroke="#7752A3" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#purple)" stroke-dasharray="8 7"/>
+<text x="930" y="1586" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Owner controls</text>
+<rect x="1140" y="1566" width="25" height="25" rx="5" fill="#FFF7E9" stroke="#E3C891" stroke-width="1.7" stroke-dasharray="4 3"/>
+<text x="1178" y="1586" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Release requirement / gate</text>
+<text x="48" y="1621" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#52647A" font-weight="400" text-anchor="start" letter-spacing="0">Repeated icons show the same components at different stages. Stop the batch when idle or overdue; keep results durable in D1 / R2.</text>
+</svg>
