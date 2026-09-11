@@ -63,7 +63,7 @@ Later on 2026-09-11 UTC, the following resources were created through the authen
 The Access issuer is `https://orange-sky-811f.cloudflareaccess.com`; the browser application's audience is recorded in `wrangler.jsonc`. The existing `embyfin.uk` zone had no DNS records before setup; Wrangler subsequently attached the Worker custom domain and uploaded the secrets. Original videos and existing Cloudflare applications were left untouched. The operator clarified that cleanup of Embyfin-owned resources is allowed; unrelated resources and original videos must remain untouched. Exact browser fields, identity-provider selection, cookie settings and recreation steps are in the [deployment runbook](CLOUDFLARE-RUNBOOK.md).
 
 Deployment preparation on 2026-09-11: Docker Desktop started successfully and the Linux/amd64 processor image built. Both Python checks passed inside that image with external networking disabled, including synthetic H.264/AAC decoding and JPEG generation: 781 ms elapsed, 705 ms CPU, 106,790,912 bytes peak RSS, 8,950 bytes scratch, and 154,440 source bytes over two mocked range reads. These measurements use local emulation, not Cloudflare runtime. The initial Free-plan blocker was resolved by the operator's Workers Paid upgrade. Deployment, live Access checks and the initial backup/isolated restore then succeeded; real Cloudflare media processing remains unverified.
-# Controlled production sample — 2026-09-11
+## Controlled production sample — 2026-09-11
 
 Two bounded launch attempts were made at 12:27:49 and 12:35:57 UTC, using the existing image digest. The sample allowed only three IDs: `7c16e23f-2740-4cc6-9c82-6106b64b6c1d` (3,874,525 bytes), `242ee8a7-0d18-4dec-a788-902781c5caff` (7,397,743 bytes), and `84e47a68-edf3-4304-ab8f-5870a950864f` (4,096 bytes, suspected invalid media). Limits were 30 seconds and 32 MiB per job, 150 seconds per batch, one container, and a ten-minute sample expiry preventing another automatic dispatch. Only the first stopped, zero-read run's cooldown was reset for the second attempt.
 
@@ -72,3 +72,19 @@ Two bounded launch attempts were made at 12:27:49 and 12:35:57 UTC, using the ex
 The Worker now allows up to 30 seconds for startup using the SDK's normal retries, logs startup success/failure, and preserves an existing stop reason during reconciliation. Local checks passed: TypeScript/syntax, 19 Node integration tests (including sample isolation/expiry), and both Python checks including real FFmpeg decoding. The Python loopback test needed execution outside the filesystem sandbox.
 
 Cleanup verified: Worker version `549f194c-a8b4-485d-bda4-fec76168c833` restored `PROCESSING_ENABLED=false`, empty `PROCESSING_SAMPLE`, and ordinary job/batch limits. D1 reported the run stopped and Wrangler reported the sole instance inactive. Original objects were unchanged. Full-queue processing remains disabled; startup/callback diagnosis and a successful sample are still pending. The repeat procedure is in [CLOUDFLARE-RUNBOOK.md](CLOUDFLARE-RUNBOOK.md#controlled-poster-test).
+
+### Follow-up: startup fixed and sample passed — 13:00 UTC
+
+This supersedes the startup blocker above. Diagnostics showed an immediate process exit (code 1), then a private, temporary stderr-capture wrapper established `batch_started` followed by `batch_stopped: network`. An unauthenticated POST comparison reproduced HTTP 403 with `Python-urllib/3.12` and the expected application HTTP 401 with `Embyfin-Processor/0.1`. The processor now identifies itself on every machine callback. Access policies, request authentication and WAF settings were not changed. The temporary wrapper/private diagnostic endpoint was removed before the successful test. Startup, exit and sanitized HTTP failure logs remain.
+
+The corrected sample started at **12:57:57 UTC**, produced two posters, rejected the invalid file, and exited with code **0 at 12:58:36 UTC**. Every selected job had one attempt; no outside job was attempted.
+
+| Video ID prefix | Result | Elapsed | CPU | Peak RSS | Reserved source bytes / requests | JPEG bytes |
+|---|---|---:|---:|---:|---:|---:|
+| `7c16e23f` | Ready; 69.823 s, 640×360 | 10.726 s | 323 ms | 68,878,336 B | 19,194,558 / 7 | 18,092 |
+| `242ee8a7` | Ready; 134.383 s, 555×416 | 14.707 s | 534 ms | 68,304,896 B | 21,168,790 / 7 | 17,749 |
+| `84e47a68` | `unsupported_or_corrupt` | Not recorded | Not recorded | Not recorded | 4,096 / 1 | None |
+
+Both R2 poster objects were independently read and checked for JPEG signatures and bounded size. Source reservations totaled **40,367,444 bytes**; overlapping FFprobe/FFmpeg range requests count again. Each job stayed below 32 MiB and 30 seconds. Reservations are conservative counters, not a billing measurement. Two small valid files do not establish performance or cost for the full collection, large/portrait/mixed-format files, or forced hard-stop behavior. The temporary wrapper did exercise the 60-second idle shutdown. No original objects were modified or deleted.
+
+Final Worker **`28be55b0-5c2e-4134-8ba5-2c6e61b69e94`** retains the fix with `PROCESSING_ENABLED=false`, empty `PROCESSING_SAMPLE`, and ordinary limits restored. Container image: `registry.cloudflare.com/a58958f1af472b99313d58370ff74638/embyfin-processor@sha256:b9f6c523f5ab6ae975b19b125dcde182f6a4e31f59b0fd7fcbed1b546b476099`. D1 run is stopped and the sole instance inactive. The controller currently labels reconciled stopped runs `lease_expired` even after a normal process exit; the observed exit code above is authoritative for this test. Validation passed: TypeScript/syntax, 19 Node checks and three Python checks, including the client-identity/authentication regression and real FFmpeg round trip. Full-queue processing remains disabled.

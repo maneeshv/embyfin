@@ -7,10 +7,22 @@ import unittest
 import importlib.util
 import hashlib
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 import main
 
 class ProcessorCheck(unittest.TestCase):
+    def test_machine_requests_identify_processor_and_keep_authentication(self):
+        response=MagicMock()
+        response.__enter__.return_value=response
+        response.headers.get_content_type.return_value='application/json'
+        response.read.return_value=b'{"job":null}'
+        with patch.object(main.urllib.request,'urlopen',return_value=response) as send:
+            self.assertEqual(main.API('https://media.test','secret').call('claim'),{'job':None})
+        request=send.call_args.args[0]
+        self.assertEqual(request.get_header('User-agent'),'Embyfin-Processor/0.1')
+        self.assertEqual(request.get_header('Authorization'),'Bearer secret')
+        self.assertEqual(request.full_url,'https://media.test/machine/claim')
+
     def test_independent_backup_checksum_and_staleness(self):
         spec=importlib.util.spec_from_file_location('backup',Path(__file__).parents[1]/'ops/check-backup.py')
         backup=importlib.util.module_from_spec(spec);spec.loader.exec_module(backup)

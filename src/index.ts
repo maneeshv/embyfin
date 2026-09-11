@@ -53,8 +53,11 @@ export class MediaController extends Container<Env> {
     });
   }
   override async onActivityExpired() { await this.control(()=>this.halt('idle_timeout')); }
-  override async onStop() { /* Next tick reconciles actual instance state; delayed stop events cannot fence a new run. */ }
-  override onError() { console.error(JSON.stringify({event:'embyfin_processor_error'})); }
+  override async onStop({exitCode,reason}:{exitCode:number;reason:string}) {
+    // Next tick reconciles state; a delayed event must not fence a new run.
+    console.log(JSON.stringify({event:'embyfin_processor_exit',exitCode,reason}));
+  }
+  override onError(error:unknown) { console.error(JSON.stringify({event:'embyfin_processor_error',message:error instanceof Error?error.message:'unknown'})); }
   async tick() {
     if(this.ticking)return this.ticking;
     this.ticking=this.control(()=>this.advance()).finally(()=>{this.ticking=undefined;});

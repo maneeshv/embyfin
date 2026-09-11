@@ -279,6 +279,8 @@ After the sample, deploy the ordinary production settings with `PROCESSING_ENABL
 | Admitted user receives 403 or an empty library | Check enabled app identity and library grants separately from Access admission. Restored subjects may need deliberate identity reconciliation. |
 | No videos after deployment | Check each library's explicit first scan, pause state, source credentials, scan errors and scheduled invocations. Creating a library alone does not start it. |
 | Videos have placeholders / pending metadata | Expected with `PROCESSING_ENABLED=false`. A completed inventory does not imply FFmpeg jobs ran. |
+| Processor exits before claiming, with `network` | Check `machine_request_failed` HTTP status and `machine_connection_failed` diagnostics. Python's default `Python-urllib/3.12` user agent received HTTP 403 from the edge; the explicit `Embyfin-Processor/0.1` identity reaches application authentication. Keep this identity on machine callbacks; no Access/WAF policy change is needed for that fix. |
+| Docker build/push hangs in `docker-credential-desktop` | Inspect only the project build's helper processes. An isolated mode-0700 `DOCKER_CONFIG` directory with a mode-0600 config avoids the hanging Desktop credential helper. Use the existing daemon endpoint and remove its temporary registry credentials after upload. Preserve the ordinary Docker configuration. |
 | Scan activity is overdue | Check Cron logs, library pause, source connection and backup maintenance. Do not create overlapping replacement libraries to bypass a stuck scan. |
 | Backup stale or app stuck in backup maintenance | Inspect `control/backup.json` independently and follow [A stuck export](RECOVERY.md#a-stuck-export). Do not clear the gate merely because a timeout elapsed. |
 

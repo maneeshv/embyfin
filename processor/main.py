@@ -30,7 +30,8 @@ class API:
         self.origin, self.token = origin.rstrip('/'), token
 
     def call(self, action, data=None, job=None, poster=None):
-        headers = {'Authorization': 'Bearer ' + self.token, 'Content-Type': 'application/json'}
+        headers = {'Authorization': 'Bearer ' + self.token, 'Content-Type': 'application/json',
+                   'User-Agent': 'Embyfin-Processor/0.1'}
         if job:
             headers.update({'X-Job-Id': job['id'], 'X-Job-Lease': job['lease']})
         payload = json.dumps(data or {}).encode()
@@ -44,12 +45,16 @@ class API:
                     raise Failure('machine_authentication_failed')
                 return json.load(response)
         except urllib.error.HTTPError as exc:
+            print(json.dumps({'event': 'machine_request_failed', 'action': action, 'status': exc.code,
+                              'contentType': exc.headers.get_content_type(), 'ray': exc.headers.get('CF-Ray')}), flush=True)
             try:
                 code = json.loads(exc.read(8192)).get('error', 'network')
             except (ValueError, AttributeError):
                 code = 'network'
             raise Failure(code) from None
-        except (OSError, TimeoutError):
+        except (OSError, TimeoutError) as exc:
+            print(json.dumps({'event': 'machine_connection_failed', 'action': action,
+                              'error': str(exc)}), flush=True)
             raise Failure('network') from None
 
 def bounds(value, size):
@@ -266,6 +271,7 @@ def process_job(api, job):
         heartbeat_thread.join(timeout=13)
 
 def main():
+    print(json.dumps({'event': 'batch_started'}), flush=True)
     api = API(os.environ['EMBYFIN_URL'], os.environ['RUN_TOKEN'])
     deadline = int(os.environ['RUN_DEADLINE'])
     while time.time() < deadline:
