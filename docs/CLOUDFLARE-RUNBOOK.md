@@ -235,7 +235,8 @@ Current operating settings in Wrangler:
 
 | Setting | Value / effect |
 |---|---|
-| `PROCESSING_ENABLED` | `false`; catalog scans work, enrichment remains queued |
+| `PROCESSING_ENABLED` | `true`; full-library enrichment enabled after the successful sample and owner request |
+| `PROCESSING_SAMPLE` | Empty; all eligible queued videos may be processed |
 | Container | `standard-2`, maximum one instance |
 | Job source read limit | 268,435,456 bytes (256 MiB) |
 | Job / batch deadline | 120 seconds / 600 seconds |
