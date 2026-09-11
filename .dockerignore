@@ -1,0 +1,4 @@
+*
+!processor/
+!processor/main.py
+!processor/Dockerfile

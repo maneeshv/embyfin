@@ -1,0 +1,8 @@
+# Non-secret current installation values. Copy to terraform.tfvars for adoption.
+account_id         = "a58958f1af472b99313d58370ff74638"
+hostname           = "media.embyfin.uk"
+owner_email        = "maneeshvettukattil@gmail.com"
+access_team_domain = "orange-sky-811f.cloudflareaccess.com"
+# Reused One-time PIN provider, verified in the dashboard on 2026-09-11.
+login_method_id = "29c185f9-e40f-4302-b883-534ec008570f"
+adopt_existing  = true

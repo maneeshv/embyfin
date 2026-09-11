@@ -1,0 +1,39 @@
+{
+  "name": "embyfin",
+  "account_id": "a58958f1af472b99313d58370ff74638",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{"pattern": "media.embyfin.uk", "custom_domain": true}],
+  "assets": {"directory": "./public", "binding": "ASSETS", "run_worker_first": true},
+  "d1_databases": [{"binding": "DB", "database_name": "embyfin", "database_id": "45db29f5-b8cb-40a0-9263-12e0a6319d6a", "migrations_dir": "migrations"}],
+  "r2_buckets": [
+    {"binding": "POSTERS", "bucket_name": "embyfin-posters"},
+    {"binding": "BACKUPS", "bucket_name": "embyfin-backups"}
+  ],
+  "containers": [{"class_name": "MediaController", "image": "./processor/Dockerfile", "image_build_context": ".", "instance_type": "standard-2", "max_instances": 1}],
+  "durable_objects": {"bindings": [{"name": "PROCESSOR", "class_name": "MediaController"}]},
+  "migrations": [{"tag": "v1", "new_sqlite_classes": ["MediaController"]}],
+  "triggers": {"crons": ["* * * * *"]},
+  "observability": {"enabled": true},
+  "vars": {
+    "APP_ORIGIN": "https://media.embyfin.uk",
+    "ACCESS_ISSUER": "https://orange-sky-811f.cloudflareaccess.com",
+    "ACCESS_AUD": "92235c0e8ec583d00921659367d54d3b0c96137d8a93030595272e21f0794f86",
+    "OWNER_EMAIL": "maneeshvettukattil@gmail.com",
+    "SOURCE_ENDPOINT": "https://a58958f1af472b99313d58370ff74638.r2.cloudflarestorage.com",
+    "SOURCE_BUCKET": "windows-video-archive",
+    "SOURCE_SCOPE": "",
+    "CF_ACCOUNT_ID": "a58958f1af472b99313d58370ff74638",
+    "CF_DATABASE_ID": "45db29f5-b8cb-40a0-9263-12e0a6319d6a",
+    "MAINTENANCE": "false",
+    "PROCESSING_ENABLED": "false",
+    "BACKUP_HOUR_UTC": "2",
+    "JOB_READ_LIMIT": "268435456",
+    "JOB_SECONDS": "120",
+    "BATCH_SECONDS": "600",
+    "VIDEO_EXTENSIONS": "mp4,m4v,mov,webm,mkv,avi,mpg,mpeg,mts,m2ts,ts,wmv,flv,ogv"
+  }
+}
