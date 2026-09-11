@@ -246,6 +246,28 @@ Current operating settings in Wrangler:
 
 These bound individual workloads, not total monthly spending. Daily backup briefly gates the application while leases drain and SQL exports; the initial observed pause/export/copy took 117 seconds. Monitor completion independently of D1. Downloads, checksum checks and recovery are in [RECOVERY.md](RECOVERY.md).
 
+## Controlled poster test
+
+Keep full processing disabled until a production sample succeeds. Copy the generated production Wrangler config to ignored `wrangler.canary.json` in the repository root. Preserve resource bindings and the deployed Container image digest; `--containers-rollout=none` avoids an image rollout for a Worker-only change.
+
+Set these temporary variables in that copy:
+
+```json
+{
+  "PROCESSING_ENABLED": "true",
+  "PROCESSING_SAMPLE": "{\"ids\":[\"VIDEO_UUID\"],\"until\":UNIX_EXPIRY_SECONDS}",
+  "JOB_SECONDS": "30",
+  "JOB_READ_LIMIT": "33554432",
+  "BATCH_SECONDS": "150"
+}
+```
+
+Replace the placeholders with one to three current video IDs and an absolute expiry ten minutes ahead. Dispatch and claims both enforce the allowlist; invalid configuration fails closed. The expiry precedes the next 15-minute dispatch, preventing a second automatic batch. Each job retains its maximum of three attempts. These are resource limits, not a dollar spending cap.
+
+Deploy with `wrangler deploy --config wrangler.canary.json --keep-vars --containers-rollout=none`. Observe Worker tail, Container logs, `processor_runs` and the selected jobs. Check poster keys/metadata, elapsed time, CPU, memory, source bytes and requests, errors, and that no other job's attempt count increased. Do not select run tokens in diagnostic output.
+
+After the sample, deploy the ordinary production settings with `PROCESSING_ENABLED=false` and explicitly set `PROCESSING_SAMPLE` to an empty string (because `--keep-vars` preserves omitted variables). Verify the run is stopped and the instance inactive. Preserve results before another test. Do not enable the whole queue merely because the sample's limits worked.
+
 ## Troubleshooting and rollback
 
 | Symptom | Check / action |

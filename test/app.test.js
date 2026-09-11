@@ -7,7 +7,7 @@ import {handle} from '../src/worker.js';
 import {one,all,run,now,byteRange,normalize,revision} from '../src/core.js';
 import {startScan,scanStep,scanIntent} from '../src/scans.js';
 import {catalog,video,personal,folders} from '../src/catalog.js';
-import {claim,validJob,expireJobs,machine} from '../src/jobs.js';
+import {claim,validJob,expireJobs,machine,processingSample} from '../src/jobs.js';
 import {machineToken,identity} from '../src/auth.js';
 import {R2Source} from '../src/storage.js';
 import {backupTick,backupState,requestBackup} from '../src/backup.js';
@@ -219,4 +219,18 @@ test('10,000-item fixture retains bounded pages, exact folder scopes, and unknow
   assert.equal(result.total,100);assert.equal(result.items.length,25);assert(result.items.every(v=>v.duration!==null));
   assert.equal((await catalog(env,alice,new URLSearchParams({folder:'collection/',recursive:'1'}))).total,10000);
   console.log(JSON.stringify({check:'10000_item_local_search',elapsedMs:Math.round(performance.now()-start)}));
+});
+
+test('controlled sample claims only selected videos and expires without consuming other jobs',async()=>{
+  const {env,v}=await fixture(),time=now();
+  await run(env.DB,"INSERT INTO processor_runs(slot,token,status,started_at,deadline,lease_until,heartbeat,read_limit,job_seconds) VALUES(1,'sample','active',?,?,?,?,?,30)",time,time+150,time+90,time,33554432);
+  env.PROCESSING_SAMPLE=JSON.stringify({ids:[v.id],until:time+150});
+  const job=await claim(env,'sample');assert(job);assert.equal((await one(env.DB,'SELECT video_id FROM jobs WHERE id=?',job.id)).video_id,v.id);
+  await run(env.DB,"UPDATE jobs SET state='ready' WHERE id=?",job.id);
+  assert.equal(await claim(env,'sample'),null);
+  env.PROCESSING_SAMPLE=JSON.stringify({ids:[v.id],until:time-1});
+  await run(env.DB,"UPDATE jobs SET state='pending' WHERE id=?",job.id);
+  assert.equal(await claim(env,'sample'),null);
+  assert.equal((await one(env.DB,'SELECT attempts FROM jobs WHERE id=?',job.id)).attempts,1);
+  env.PROCESSING_SAMPLE='{}';assert.throws(()=>processingSample(env));
 });

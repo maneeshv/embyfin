@@ -2,6 +2,16 @@ import {all, one, run, sql, fail, id, now, number, string, body, json} from './c
 import {machineIdentity} from './auth.js';
 import {ensureCurrent} from './catalog.js';
 
+// A temporary canary is limited to three videos and an absolute expiry.
+export function processingSample(env) {
+  if (!env.PROCESSING_SAMPLE) return {ids:null,until:Number.MAX_SAFE_INTEGER};
+  const sample=JSON.parse(env.PROCESSING_SAMPLE);
+  if (!Array.isArray(sample.ids) || sample.ids.length<1 || sample.ids.length>3 ||
+      sample.ids.some(id=>typeof id!=='string' || !/^[a-f0-9-]{36}$/.test(id)) ||
+      !Number.isSafeInteger(sample.until) || sample.until<=0) throw Error('invalid_processing_sample');
+  return {ids:JSON.stringify(sample.ids),until:sample.until};
+}
+
 export async function validRun(env,token) {
   const run = await one(env.DB,"SELECT * FROM processor_runs WHERE slot=1 AND token=? AND status='active' AND lease_until>? AND deadline>?",token,now(),now());
   if (!run) fail(409,'stale_run'); return run;
@@ -15,16 +25,17 @@ export async function validJob(env,token,jobId,lease) {
   if (!job) fail(409,'stale_job'); return job;
 }
 export async function claim(env,token) {
-  const active = await validRun(env,token), time = now(), lease = id();
-  if (active.deadline-time < active.job_seconds+15) return null;
+  const active = await validRun(env,token), time = now(), lease = id(), sample=processingSample(env);
+  if (Math.min(active.deadline,sample.until)-time < active.job_seconds+15) return null;
   const job = await one(env.DB,`UPDATE jobs SET state='leased',token=?,run_token=?,lease_until=?,attempts=attempts+1,
     read_bytes=0,read_requests=0,poster_key=NULL,error=NULL WHERE id=(
       SELECT j.id FROM jobs j JOIN videos v ON v.id=j.video_id JOIN libraries l ON l.id=v.library_id
       WHERE j.state='pending' AND j.attempts<3 AND j.retry_after<=? AND v.revision=j.revision
-      AND v.available=1 AND l.enabled=1 AND l.paused=0 ORDER BY j.retry_after,j.id LIMIT 1)
+      AND v.available=1 AND l.enabled=1 AND l.paused=0
+      AND (? IS NULL OR v.id IN (SELECT value FROM json_each(?))) ORDER BY j.retry_after,j.id LIMIT 1)
     AND NOT EXISTS(SELECT 1 FROM jobs WHERE state='leased')
     AND EXISTS(SELECT 1 FROM processor_runs WHERE slot=1 AND token=? AND status='active' AND lease_until>? AND deadline>?) RETURNING *`,
-    lease,token,Math.min(time+90,active.deadline),time,token,time,time+active.job_seconds+15);
+    lease,token,Math.min(time+90,active.deadline),time,sample.ids,sample.ids,token,time,time+active.job_seconds+15);
   if (!job) return null;
   const video = await one(env.DB,'SELECT * FROM videos WHERE id=?',job.video_id);
   return {id:job.id,lease,revision:job.revision,bytes:video.bytes,type:video.filename.split('.').pop(),deadline:Math.min(active.deadline,time+active.job_seconds),readLimit:active.read_limit};

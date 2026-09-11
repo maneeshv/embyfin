@@ -3,7 +3,7 @@ import {handle} from './worker.js';
 import {one, run, now, id} from './core.js';
 import {R2Source} from './storage.js';
 import {scanStep} from './scans.js';
-import {expireJobs} from './jobs.js';
+import {expireJobs,processingSample} from './jobs.js';
 import {machineToken} from './auth.js';
 import {backupTick, maintenance} from './backup.js';
 
@@ -74,15 +74,18 @@ export class MediaController extends Container<Env> {
         return;
       }
       const previous=await one(this.env.DB,'SELECT * FROM processor_runs WHERE slot=1');
-      if (previous && (previous.status!=='active' || previous.lease_until<=now() || previous.deadline<=now() || (await this.getState()).status==='stopped')) await this.halt('lease_expired');
+      if (previous && (previous.status!=='active' || previous.lease_until<=now() || previous.deadline<=now() || (await this.getState()).status==='stopped')) await this.halt(previous.error || 'lease_expired');
       await expireJobs(this.env);
       await run(this.env.DB,'UPDATE libraries SET next_scan=0 WHERE paused=0 AND EXISTS(SELECT 1 FROM videos v WHERE v.library_id=libraries.id AND v.refresh_requested=1)');
       if (this.env.SOURCE_ACCESS_KEY_ID) await scanStep(this.env,new R2Source(this.env));
       if (this.env.PROCESSING_ENABLED!=='true') return;
+      const sample=processingSample(this.env);
+      if (sample.until<=now()) return;
       const pending=await one(this.env.DB,`SELECT j.id FROM jobs j JOIN videos v ON v.id=j.video_id JOIN libraries l ON l.id=v.library_id
-        WHERE j.state='pending' AND j.retry_after<=? AND j.attempts<3 AND v.revision=j.revision AND v.available=1 AND l.enabled=1 AND l.paused=0 LIMIT 1`,now());
+        WHERE j.state='pending' AND j.retry_after<=? AND j.attempts<3 AND v.revision=j.revision AND v.available=1 AND l.enabled=1 AND l.paused=0
+        AND (? IS NULL OR v.id IN (SELECT value FROM json_each(?))) LIMIT 1`,now(),sample.ids,sample.ids);
       if (!pending) return;
-      const token=id(),started=now(),deadline=started+Math.min(600,Math.max(150,Number(this.env.BATCH_SECONDS)||600));
+      const token=id(),started=now(),deadline=Math.min(sample.until,started+Math.min(600,Math.max(150,Number(this.env.BATCH_SECONDS)||600)));
       const jobSeconds=Math.min(120,Math.max(10,Number(this.env.JOB_SECONDS)||120));
       const readLimit=Math.min(268435456,Math.max(1048576,Number(this.env.JOB_READ_LIMIT)||268435456));
       const acquired=await one(this.env.DB,`INSERT INTO processor_runs(slot,token,status,started_at,deadline,lease_until,heartbeat,read_limit,job_seconds,next_dispatch)
@@ -95,8 +98,12 @@ export class MediaController extends Container<Env> {
       await this.ctx.storage.put('active',active);
       await this.schedule(new Date(deadline*1000),'deadline',active);
       try {
-        await this.start({envVars:{EMBYFIN_URL:this.env.APP_ORIGIN,RUN_TOKEN:await machineToken(this.env,token,deadline),RUN_DEADLINE:String(deadline)}},{portToCheck:8080,retries:1});
-      } catch {await this.halt('startup_failed');}
+        await this.start({envVars:{EMBYFIN_URL:this.env.APP_ORIGIN,RUN_TOKEN:await machineToken(this.env,token,deadline),RUN_DEADLINE:String(deadline)}},{portToCheck:8080,signal:AbortSignal.timeout(30_000)});
+        console.log(JSON.stringify({event:'embyfin_processor_started'}));
+      } catch (error) {
+        console.error(JSON.stringify({event:'embyfin_processor_start_failed',message:error instanceof Error?error.message:'unknown'}));
+        await this.halt('startup_failed');
+      }
   }
 }
 export default {

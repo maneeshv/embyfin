@@ -17,3 +17,4 @@ output/
 *.tfvars.json
 crash.log
 wrangler.terraform.json
+wrangler.canary.json
