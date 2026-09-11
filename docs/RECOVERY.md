@@ -81,3 +81,40 @@ Record export blocking time, restore duration, exact recovery point, comparison 
 ## A stuck export
 
 Read `control/backup.json` directly from R2 and examine provider export status using the stored bookmark. Fix credentials/networking and let bounded polling resume. If cancelling, confirm the provider export has completed or cancelled, destroy processing, and then set that control manifest's status to `failed`, preserving `lastComplete` and its failure details. Never reopen based solely on a timeout, and never delete the last known good backup. A migration must not run until a new consistent backup has passed checksum verification.
+
+
+## Encrypted workstation recovery archive
+
+A verified, client-encrypted `age` archive is stored in the private **embyfin-terraform-state** bucket:
+
+- Object: `recovery/recovery-20260911T113031Z.tar.gz.age`
+- SHA-256: `77bc63b8cda4ee31f19ca764303e5fd0b978887e46d08d5b1664201a60738333`
+- Source snapshot: `04e4191a97696fbdcb058503e40a014ab48abc41` (Git bundle).
+- Contains the four runtime secrets, Terraform operator/backend credentials, current remote state, production tfvars, generated Wrangler config, source bundle and the then-current runbooks.
+- Does **not** contain original videos, catalog SQL, or the recovery private key. D1 data recovery still uses the SQL backup procedure above.
+
+The uploaded bytes were downloaded again, checked against SHA-256 and successfully decrypted; the archive entries and source bundle were verified. The R2 bucket has no public domains or object-expiration rule. This is a manual recovery checkpoint, not a scheduled backup. Refresh after credential rotation or infrastructure changes. It covers workstation loss; Cloudflare account loss still requires an independent copy of the encrypted archive.
+
+### Store the key in 1Password
+
+Create a **Password** item in your Private vault named **Embyfin recovery backup — age key**. Paste the complete `AGE-SECRET-KEY-...` line into its password field. Add the bucket/object above and these restore instructions to Notes. Save, reopen, and verify the full key was retained. The owner is saving it manually; vault storage is not yet verified. The private key is temporarily retained locally in ignored mode-0600 `.wrangler/recovery-key.txt`; it is never uploaded to R2, bundled, or committed. `ops/recovery-recipient.txt` contains only the public encryption recipient and can safely remain in Git.
+
+### Restore on a replacement workstation
+
+1. Sign into Cloudflare independently and download the encrypted object from **R2 → embyfin-terraform-state → recovery/**. This avoids needing the API credentials that are themselves inside the archive.
+2. Install [age](https://github.com/FiloSottile/age) (`brew install age` on macOS). Create a protected `recovery-key.txt` containing the private line retrieved from 1Password; do not paste it into a shell command or history.
+3. Verify the encrypted file's SHA-256 against this record, then decrypt into a private directory:
+
+   ```sh
+   umask 077
+   mkdir embyfin-recovered
+   age -d -i recovery-key.txt -o recovery.tar.gz recovery-20260911T113031Z.tar.gz.age
+   tar -xzf recovery.tar.gz -C embyfin-recovered
+   ```
+
+4. Recover the source with `git clone embyfin-recovered/.wrangler/recovery-source-20260911T113031Z.bundle embyfin-source`, then check out the source commit recorded above. The private GitHub branch may have newer runbook changes. Restore the credential/state/config files to their corresponding paths only after checking their timestamps against live configuration. Use mode 0600 for credentials.
+5. Load the operator and backend environment variables and run `terraform init` followed by `terraform plan` against the existing remote state. **Do not push an old archive state over a newer live backend.** Use its state backup only if the live backend is lost and its recovery point has been reviewed. Follow the deployment runbook; do not run SQL migrations merely to restore a workstation.
+
+### Refresh this checkpoint
+
+Use `terraform state pull` to obtain current state with both credential files loaded. Create a fresh `git bundle` of the preserved source revision. Archive the same explicit file list above (never all of `.wrangler/`, which contains the private key), and encrypt with `age -R ops/recovery-recipient.txt`. Upload only the `.age` file under a **new timestamped** `recovery/` object key. Download it to verify its hash; decrypt with the 1Password key to verify the archive. Record the new object, SHA-256, source commit and verification date here. Retain the prior checkpoint until the new one is verified. Changing the public recipient does not re-encrypt old backups: retain any older private keys while their archives remain.
