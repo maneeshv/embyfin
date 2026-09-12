@@ -8,6 +8,8 @@ variables {
   access_team_domain = "test-team.cloudflareaccess.com"
   login_method_id    = "00000000-0000-0000-0000-000000000001"
   adopt_existing     = false
+  source_endpoint    = "https://00000000000000000000000000000000.r2.cloudflarestorage.com"
+  source_bucket      = "test-originals"
 }
 
 run "private_installation" {
@@ -47,6 +49,8 @@ run "private_installation" {
       output.wrangler_config.vars.ACCESS_ISSUER == "https://test-team.cloudflareaccess.com" &&
       output.wrangler_config.vars.OWNER_EMAIL == "owner@example.com" &&
       output.wrangler_config.vars.APP_ORIGIN == "https://media.test.example" &&
+      output.wrangler_config.vars.SOURCE_BUCKET == "test-originals" &&
+      output.wrangler_config.vars.PROCESSING_ENABLED == "false" &&
       !output.wrangler_config.workers_dev && !output.wrangler_config.preview_urls &&
       !contains(keys(output.wrangler_config.vars), "MACHINE_SECRET") &&
       !contains(keys(output.wrangler_config.vars), "CF_API_TOKEN") &&
@@ -57,7 +61,7 @@ run "private_installation" {
   }
 }
 
-run "reject_import_into_another_account" {
+run "reject_adoption_without_ids" {
   command = plan
   variables {
     adopt_existing = true

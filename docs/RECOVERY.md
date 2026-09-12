@@ -2,7 +2,7 @@
 
 Keep this file, deployment identifiers, and independent Cloudflare operator credentials outside the database and application. R2 originals are **not backed up** by Embyfin. Posters are regenerable. Backups in the same Cloudflare account do not protect against account-wide loss.
 
-Use the [Cloudflare deployment runbook](CLOUDFLARE-RUNBOOK.md) for account/resource IDs, Access policies, credential recreation and deployment commands. The [acceptance record](ACCEPTANCE.md) documents the completed isolated restore drill and its limits. The first verified backup predates production library setup and scans; always select the latest suitable completed recovery point.
+Use the [Cloudflare deployment runbook](CLOUDFLARE-RUNBOOK.md) for Access policies, credential recreation and deployment commands; keep installation IDs in `.private/deployment.md`. The [acceptance record](ACCEPTANCE.md) lists the required restore checks. Select the latest suitable completed recovery point; retain verification evidence in the private acceptance record.
 
 ## Daily operation
 
@@ -14,12 +14,12 @@ The provisional RPO is 24 hours and RTO is 4 hours after operator action. These 
 
 ## Independent health monitoring
 
-Use independent Cloudflare operator credentials to download `embyfin-backups/control/backup.json` through R2/CLI, then run:
+Use independent Cloudflare operator credentials to download `BACKUP_BUCKET/control/backup.json` through R2/CLI, then run:
 
 ```sh
 umask 077
 mkdir -p .wrangler/recovery
-./node_modules/.bin/wrangler r2 object get embyfin-backups/control/backup.json --remote --config wrangler.jsonc --file .wrangler/recovery/backup.json
+./node_modules/.bin/wrangler r2 object get BACKUP_BUCKET/control/backup.json --remote --config wrangler.generated.json --file .wrangler/recovery/backup.json
 python3 ops/check-backup.py .wrangler/recovery/backup.json
 ```
 
@@ -31,12 +31,12 @@ Exit 2 means no valid recent backup. Configure an external scheduled monitor and
 
 1. Enable `MAINTENANCE=true` through deployment configuration or put `control/maintenance.json` (any JSON object) in the private backup bucket using independent operator credentials. This check runs before D1 access. Stop Cron triggers and destroy the named processor in the Cloudflare control plane; wait for active source responses to end. Access admission alone is not a substitute for the maintenance gate.
 2. Download a completed SQL file and its `.sql.json` manifest. Verify it with `python3 ops/check-backup.py manifest.json --sql export.sql`. If using an older recovery point intentionally, verify SHA-256/bytes separately and explicitly record the failed RPO; never call it a healthy daily backup.
-3. Create a **new isolated D1 database** in the dashboard or with `wrangler d1 create RESTORE_DB --config wrangler.jsonc`, replacing `RESTORE_DB` with a unique recovery database name. Record its new ID. Save this minimal operator configuration as `.wrangler/restore-config.json`, replacing both placeholders and using the actual account ID if restoring elsewhere:
+3. Create a **new isolated D1 database** in the dashboard or with `wrangler d1 create RESTORE_DB --config wrangler.generated.json`, replacing `RESTORE_DB` with a unique recovery database name. Record its new ID. Save this minimal operator configuration as `.wrangler/restore-config.json`, replacing both placeholders and using the actual account ID if restoring elsewhere:
 
    ```json
    {
      "name": "embyfin-restore-operator",
-     "account_id": "a58958f1af472b99313d58370ff74638",
+     "account_id": "REPLACE_WITH_ACCOUNT_ID",
      "d1_databases": [{
        "binding": "DB",
        "database_name": "RESTORE_DB",
@@ -45,7 +45,7 @@ Exit 2 means no valid recent backup. Configure an external scheduled monitor and
    }
    ```
 
-   Confirm that ID differs from the serving database ID in `wrangler.jsonc`. Import the verified export using independent operator credentials:
+   Confirm that ID differs from the serving database ID in `wrangler.generated.json`. Import the verified export using independent operator credentials:
 
    ```sh
    ./node_modules/.bin/wrangler d1 execute DB --remote --config .wrangler/restore-config.json --file .wrangler/recovery/export.sql
@@ -73,7 +73,7 @@ Exit 2 means no valid recent backup. Configure an external scheduled monitor and
    PY
    ```
 6. Reconcile each viewer against a current independently maintained authorization record; if none exists, require explicit owner reapproval. Re-admit/enable and regrant only approved people. Check the current Access policy separately. Do not assume all restored account state still reflects current permission.
-7. Change **both** the serving `d1_databases[0].database_id` and backup `vars.CF_DATABASE_ID` in the deployment configuration to the verified database, then deploy while maintenance remains on. If Terraform has adopted this installation, first [reconcile its catalog state to the restored database](../infra/terraform/README.md#recovery-when-terraform-owns-d1) and regenerate `wrangler.terraform.json`; otherwise update `wrangler.jsonc` directly. Leave the old database intact until recovery is accepted. Recheck schema, owner sign-in and disabled viewer denial. Clear old Container durable `active` state by stopping the controller; its next tick also destroys/reconciles any stale instance before dispatch.
+7. Change **both** the serving `d1_databases[0].database_id` and backup `vars.CF_DATABASE_ID` in the deployment configuration to the verified database, then deploy while maintenance remains on. If Terraform has adopted this installation, first [reconcile its catalog state to the restored database](../infra/terraform/README.md#recovery-when-terraform-owns-d1) and regenerate `wrangler.generated.json`; otherwise prepare and verify a replacement operator configuration. Leave the old database intact until recovery is accepted. Recheck schema, owner sign-in and disabled viewer denial. Clear old Container durable `active` state by stopping the controller; its next tick also destroys/reconciles any stale instance before dispatch.
 8. Remove `control/maintenance.json` or set `MAINTENANCE=false`, resume Cron, and explicitly resume approved libraries. Source reconciliation uses exact HEAD checks and never deletes originals. A missing poster produces a placeholder. Take a new verified backup.
 
 Record export blocking time, restore duration, exact recovery point, comparison counts, current-policy reconciliation, two-user isolation, and received stale-backup alert. Run the drill while the owner UI is unavailable. Only accept the PRD recovery target after those measurements pass.
@@ -83,38 +83,6 @@ Record export blocking time, restore duration, exact recovery point, comparison 
 Read `control/backup.json` directly from R2 and examine provider export status using the stored bookmark. Fix credentials/networking and let bounded polling resume. If cancelling, confirm the provider export has completed or cancelled, destroy processing, and then set that control manifest's status to `failed`, preserving `lastComplete` and its failure details. Never reopen based solely on a timeout, and never delete the last known good backup. A migration must not run until a new consistent backup has passed checksum verification.
 
 
-## Encrypted workstation recovery archive
+## Encrypted deployment context and workstation recovery
 
-A verified, client-encrypted `age` archive is stored in the private **embyfin-terraform-state** bucket:
-
-- Object: `recovery/recovery-20260911T113031Z.tar.gz.age`
-- SHA-256: `77bc63b8cda4ee31f19ca764303e5fd0b978887e46d08d5b1664201a60738333`
-- Source snapshot: `04e4191a97696fbdcb058503e40a014ab48abc41` (Git bundle).
-- Contains the four runtime secrets, Terraform operator/backend credentials, current remote state, production tfvars, generated Wrangler config, source bundle and the then-current runbooks.
-- Does **not** contain original videos, catalog SQL, or the recovery private key. D1 data recovery still uses the SQL backup procedure above.
-
-The uploaded bytes were downloaded again, checked against SHA-256 and successfully decrypted; the archive entries and source bundle were verified. The R2 bucket has no public domains or object-expiration rule. This is a manual recovery checkpoint, not a scheduled backup. Refresh after credential rotation or infrastructure changes. It covers workstation loss; Cloudflare account loss still requires an independent copy of the encrypted archive.
-
-### Store the key in 1Password
-
-Create a **Password** item in your Private vault named **Embyfin recovery backup — age key**. Paste the complete `AGE-SECRET-KEY-...` line into its password field. Add the bucket/object above and these restore instructions to Notes. Save, reopen, and verify the full key was retained. The owner confirmed saving the key in 1Password on 2026-09-11. The temporary local `.wrangler/recovery-key.txt` was removed after that confirmation; the key was never uploaded to R2, bundled, or committed. Vault storage is owner-confirmed, not independently inspected. `ops/recovery-recipient.txt` contains only the public encryption recipient and can safely remain in Git.
-
-### Restore on a replacement workstation
-
-1. Sign into Cloudflare independently and download the encrypted object from **R2 → embyfin-terraform-state → recovery/**. This avoids needing the API credentials that are themselves inside the archive.
-2. Install [age](https://github.com/FiloSottile/age) (`brew install age` on macOS). Create a protected `recovery-key.txt` containing the private line retrieved from 1Password; do not paste it into a shell command or history.
-3. Verify the encrypted file's SHA-256 against this record, then decrypt into a private directory:
-
-   ```sh
-   umask 077
-   mkdir embyfin-recovered
-   age -d -i recovery-key.txt -o recovery.tar.gz recovery-20260911T113031Z.tar.gz.age
-   tar -xzf recovery.tar.gz -C embyfin-recovered
-   ```
-
-4. Recover the source with `git clone embyfin-recovered/.wrangler/recovery-source-20260911T113031Z.bundle embyfin-source`, then check out the source commit recorded above. The private GitHub branch may have newer runbook changes. Restore the credential/state/config files to their corresponding paths only after checking their timestamps against live configuration. Use mode 0600 for credentials.
-5. Load the operator and backend environment variables and run `terraform init` followed by `terraform plan` against the existing remote state. **Do not push an old archive state over a newer live backend.** Use its state backup only if the live backend is lost and its recovery point has been reviewed. Follow the deployment runbook; do not run SQL migrations merely to restore a workstation.
-
-### Refresh this checkpoint
-
-Use `terraform state pull` to obtain current state with both credential files loaded. Create a fresh `git bundle` of the preserved source revision. Archive the same explicit file list above (never all of `.wrangler/`, which contains credentials and may contain temporary recovery keys), and encrypt with `age -R ops/recovery-recipient.txt`. Upload only the `.age` file under a **new timestamped** `recovery/` object key. Download it to verify its hash; decrypt with the 1Password key to verify the archive. Record the new object, SHA-256, source commit and verification date here. Retain the prior checkpoint until the new one is verified. Changing the public recipient does not re-encrypt old backups: retain any older private keys while their archives remain.
+See [private deployment context](PRIVATE-CONTEXT.md) for encrypted R2 checkpoints, the private file layout, and replacement-workstation instructions. Store archive locations, checksums, verification dates and the age recipient in private records, not this repository. The decryption key must remain in the operator vault and outside every archive.

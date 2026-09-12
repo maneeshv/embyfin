@@ -44,7 +44,7 @@ Scheduled export steps stream consistent SQL backups into the private backup buc
 
 Both in-place Time Travel and isolated-database restoration use an operator-controlled maintenance gate outside D1. Recovery stops traffic/schedules/processing, invalidates restored leases, and reconciles authorization before reopening. If current grants are unavailable, restored viewer access stays disabled until owner reapproval. The runbook, operator credentials/configuration references, backup health reporting, and alert delivery must work without the application UI. These operational details are specified in PRD section 9.
 
-No representative media workload has been run. The owner must accept measured playback coverage, thumbnail yield, resource/cost limits, backup targets, and non-overlapping sharing prefixes. One provider simplifies the proposed deployment; it does not establish lower cost or universal format compatibility. Current official sources are linked in the PRD.
+Representative workload evidence is maintained in each installation’s private acceptance record. The owner must accept measured playback coverage, thumbnail yield, resource/cost limits, backup targets, and non-overlapping sharing prefixes. One provider simplifies the proposed deployment; it does not establish lower cost or universal format compatibility. Current official sources are linked in the PRD.
 
 ## Editing and verification
 

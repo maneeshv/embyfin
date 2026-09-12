@@ -1,8 +1,19 @@
-# Non-secret current installation values. Copy to terraform.tfvars for adoption.
-account_id         = "a58958f1af472b99313d58370ff74638"
-hostname           = "media.embyfin.uk"
-owner_email        = "maneeshvettukattil@gmail.com"
-access_team_domain = "orange-sky-811f.cloudflareaccess.com"
-# Reused One-time PIN provider, verified in the dashboard on 2026-09-11.
-login_method_id = "29c185f9-e40f-4302-b883-534ec008570f"
-adopt_existing  = true
+# Copy to .private/terraform.tfvars and replace every example value.
+account_id         = "00000000000000000000000000000000"
+hostname           = "media.example.com"
+owner_email        = "owner@example.com"
+access_team_domain = "your-team.cloudflareaccess.com"
+login_method_id    = "00000000-0000-0000-0000-000000000001"
+source_endpoint    = "https://00000000000000000000000000000000.r2.cloudflarestorage.com"
+source_bucket      = "your-original-videos"
+source_scope       = ""
+adopt_existing     = false
+# Existing installation only: set adopt_existing=true and supply all five IDs.
+# existing_resources = {
+#   catalog          = "DATABASE_UUID"
+#   owner_policy     = "OWNER_POLICY_UUID"
+#   processor_policy = "PROCESSOR_POLICY_UUID"
+#   browser_app      = "BROWSER_APP_UUID"
+#   processor_app    = "PROCESSOR_APP_UUID"
+# }
+# runtime_settings = { PROCESSING_ENABLED = "true" }

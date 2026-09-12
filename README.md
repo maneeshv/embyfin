@@ -25,13 +25,9 @@ Tests open an ephemeral loopback-only Range proxy. In a restricted environment, 
 
 ## Deployment configuration
 
-The application is deployed at <https://media.embyfin.uk> behind owner-only Cloudflare Access. The Worker, secrets, custom domain, Cron trigger and Container image are deployed; the initial remote D1 migration is applied. As of 2026-09-11 UTC, owner sign-in is confirmed and Categories/Gimgyrl scans have completed with **31 videos**; the other six libraries await their first scan. Media processing remains **off** pending runtime/device/budget acceptance. The first scheduled backup passed checksum verification and an isolated D1 restore drill, but predates these scans.
+Use the [Cloudflare deployment runbook](docs/CLOUDFLARE-RUNBOOK.md) and [Terraform guide](infra/terraform/README.md) for installation. Terraform manages the catalog, derived buckets and Access; Wrangler releases the Worker and Container. Start processing disabled until representative runtime and budget checks pass.
 
-Use the [Cloudflare deployment runbook](docs/CLOUDFLARE-RUNBOOK.md) for the exact browser configuration, resource IDs, credentials, repeat deployment commands, verification and troubleshooting. Use [recovery](docs/RECOVERY.md) for data restoration and [release acceptance](docs/ACCEPTANCE.md) for completed and outstanding checks. The implementation is still uncommitted at this checkpoint; preserve the source and keep recovery credentials independently before relying on a fresh-machine rebuild.
-
-[Terraform infrastructure](infra/terraform/README.md) manages D1, private poster/backup buckets and Access applications/policies, with imports for the existing installation and deletion protection. It generates Wrangler configuration from the infrastructure outputs; Wrangler deploys the Worker and Container. Local validation/tests pass; live Terraform adoption needs a separate infrastructure operator token.
-
-The confirmed source bucket is `windows-video-archive`. The read-only inventory on 2026-09-10 UTC found 3,704 objects, 395,908,442,551 bytes, and 1,262 MP4 candidates across eight top-level prefixes; largest candidate: 3,963,895,118 bytes. Secrets remain in ignored `.dev.vars`; private object-key inventories and check reports remain in ignored `.wrangler/` files. Container/codec/browser suitability is not inferred from the extension.
+Production inputs and operational history belong in ignored `.private/` files. [Private deployment context](docs/PRIVATE-CONTEXT.md) explains encrypted R2 backup and recovery. Public examples use synthetic values and do not target a live installation. Generate `wrangler.generated.json` before deployment; never deploy the template directly.
 
 Read-only source requests have no delete/rename/copy path. Exact keys are preserved in D1; keys containing standalone `.` or `..` URL segments remain discoverable but fail with `unsupported_key_path` because URL normalization would otherwise resolve a different key. Changing provider/source configuration after catalog creation fails closed and requires migration.
 
@@ -45,6 +41,6 @@ Read-only source requests have no delete/rename/copy path. Exact keys are preser
 
 ## Release verification
 
-[docs/ACCEPTANCE.md](docs/ACCEPTANCE.md) separates executed checks from outstanding account/device/resource acceptance. Local checks do not establish Cloudflare Container cold-start cost, metered shutdown, real-account Access switching, mobile seeking, backup export blocking, or a restored production authorization policy.
+[docs/ACCEPTANCE.md](docs/ACCEPTANCE.md) lists release acceptance checks. Keep installation-specific results in the private record. Local checks do not establish Cloudflare Container cold-start cost, metered shutdown, real-account Access switching, mobile seeking, backup export blocking, or a restored production authorization policy.
 
 Sources used to verify platform interfaces: [Container lifecycle API](https://developers.cloudflare.com/containers/reference/container-class/), [D1 export API](https://developers.cloudflare.com/api/resources/d1/subresources/database/methods/export/), [Access JWT validation](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/), [R2 presigned URLs](https://developers.cloudflare.com/r2/api/s3/presigned-urls/).

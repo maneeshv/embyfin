@@ -143,7 +143,7 @@ def overview():
     s.text(865,558,'Storage adapter',24,BLUE,700,'middle')
     s.text(865,587,'R2 implementation · app code',19,MUTED,anchor='middle')
     s.node(1240,241,260,151,'database','D1','Catalog · grants · history',color=PURPLE,size=28)
-    s.node(1240,425,260,171,'bucket','R2 · originals','~600 GB · read-only',color=AMBER)
+    s.node(1240,425,260,171,'bucket','R2 · originals','Existing · read-only',color=AMBER)
     s.node(1240,627,260,160,'poster','R2 · generated','Private poster images',color=TEAL)
     s.node(1240,854,260,170,'backup','R2 · backups','Private SQL exports',color=PURPLE)
     s.node(375,730,250,174,'clock','Cron Triggers','1m tick · due work',size=25)

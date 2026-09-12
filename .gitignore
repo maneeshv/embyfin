@@ -18,3 +18,6 @@ output/
 crash.log
 wrangler.terraform.json
 wrangler.canary.json
+
+.private/
+wrangler.generated.json

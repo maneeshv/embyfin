@@ -14,8 +14,8 @@ provider "cloudflare" {}
 locals {
   wrangler = jsondecode(file("${path.module}/../../wrangler.jsonc"))
   buckets = {
-    posters = "embyfin-posters"
-    backups = "embyfin-backups"
+    posters = var.poster_bucket_name
+    backups = var.backup_bucket_name
   }
 }
 
@@ -130,6 +130,7 @@ resource "cloudflare_zero_trust_access_application" "processor" {
 output "wrangler_config" {
   description = "Production Wrangler configuration populated with Terraform resource identifiers."
   value = merge(local.wrangler, {
+    name       = var.worker_name
     account_id = var.account_id
     routes     = [{ pattern = var.hostname, custom_domain = true }]
     d1_databases = [merge(local.wrangler.d1_databases[0], {
@@ -140,13 +141,16 @@ output "wrangler_config" {
       { binding = "POSTERS", bucket_name = cloudflare_r2_bucket.derived["posters"].name },
       { binding = "BACKUPS", bucket_name = cloudflare_r2_bucket.derived["backups"].name },
     ]
-    vars = merge(local.wrangler.vars, {
-      APP_ORIGIN     = "https://${var.hostname}"
-      ACCESS_ISSUER  = "https://${var.access_team_domain}"
-      ACCESS_AUD     = cloudflare_zero_trust_access_application.browser.aud
-      OWNER_EMAIL    = lower(var.owner_email)
-      CF_ACCOUNT_ID  = var.account_id
-      CF_DATABASE_ID = cloudflare_d1_database.catalog.id
+    vars = merge(local.wrangler.vars, var.runtime_settings, {
+      SOURCE_ENDPOINT = var.source_endpoint
+      SOURCE_BUCKET   = var.source_bucket
+      SOURCE_SCOPE    = var.source_scope
+      APP_ORIGIN      = "https://${var.hostname}"
+      ACCESS_ISSUER   = "https://${var.access_team_domain}"
+      ACCESS_AUD      = cloudflare_zero_trust_access_application.browser.aud
+      OWNER_EMAIL     = lower(var.owner_email)
+      CF_ACCOUNT_ID   = var.account_id
+      CF_DATABASE_ID  = cloudflare_d1_database.catalog.id
     })
   })
 }

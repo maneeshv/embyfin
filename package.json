@@ -6,11 +6,14 @@
   "scripts": {
     "dev": "wrangler dev --config wrangler.local.jsonc",
     "db:migrate": "wrangler d1 migrations apply embyfin --local --config wrangler.local.jsonc",
-    "test": "node --test test/*.test.js && python3 -B -m unittest discover -s processor -p 'test_*.py'",
+    "test": "node --test test/*.test.js && python3 -B -m unittest discover -s processor -p 'test_*.py' && python3 -B -m unittest discover -s ops -p 'test_*.py'",
     "check": "tsc && node --check public/app.js && python3 -c \"import ast,pathlib; ast.parse(pathlib.Path('processor/main.py').read_text())\"",
     "build": "wrangler deploy --dry-run --containers-rollout=none --outdir dist",
     "build:processor": "docker build --platform linux/amd64 -f processor/Dockerfile -t embyfin-processor .",
-    "deploy": "wrangler deploy"
+    "deploy": "node ops/deploy-config.mjs --deploy",
+    "config": "node ops/deploy-config.mjs",
+    "backup:context": "node ops/private-context.mjs context",
+    "check:public": "python3 ops/check-public.py"
   },
   "dependencies": {
     "@cloudflare/containers": "^0.2.0",

@@ -51,10 +51,74 @@ variable "login_method_id" {
 
 variable "adopt_existing" {
   type        = bool
-  default     = true
-  description = "Import the recorded production resources; false only for a new installation with separate state."
+  default     = false
+  description = "Adopt resources whose IDs are explicitly supplied in existing_resources."
   validation {
-    condition     = !var.adopt_existing || (var.account_id == "a58958f1af472b99313d58370ff74638" && var.hostname == "media.embyfin.uk")
-    error_message = "Recorded imports belong to the existing Embyfin installation. For a new installation use separate state and adopt_existing=false."
+    condition = !var.adopt_existing || alltrue([
+      for id in values(var.existing_resources) : can(regex("^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$", id))
+    ])
+    error_message = "Adoption requires all five existing resource UUIDs in private inputs."
+  }
+}
+
+variable "existing_resources" {
+  type = object({
+    catalog          = optional(string, "")
+    owner_policy     = optional(string, "")
+    processor_policy = optional(string, "")
+    browser_app      = optional(string, "")
+    processor_app    = optional(string, "")
+  })
+  default  = {}
+  nullable = false
+}
+
+variable "source_endpoint" {
+  type        = string
+  description = "Read-only source S3 endpoint; credentials are Worker secrets."
+  validation {
+    condition     = can(regex("^https://[a-f0-9]{32}\\.r2\\.cloudflarestorage\\.com$", var.source_endpoint))
+    error_message = "Supply an HTTPS R2 account endpoint."
+  }
+}
+
+variable "source_bucket" {
+  type = string
+  validation {
+    condition     = can(regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.source_bucket))
+    error_message = "Supply the existing source bucket name."
+  }
+}
+
+variable "source_scope" {
+  type    = string
+  default = ""
+}
+
+variable "poster_bucket_name" {
+  type    = string
+  default = "embyfin-posters"
+}
+
+variable "backup_bucket_name" {
+  type    = string
+  default = "embyfin-backups"
+}
+
+variable "worker_name" {
+  type    = string
+  default = "embyfin"
+}
+
+variable "runtime_settings" {
+  type        = map(string)
+  default     = {}
+  description = "Optional operational overrides; identity, bindings and secrets cannot be overridden here."
+  validation {
+    condition = alltrue([for key in keys(var.runtime_settings) : contains([
+      "MAINTENANCE", "PROCESSING_ENABLED", "PROCESSING_SAMPLE", "BACKUP_HOUR_UTC",
+      "JOB_READ_LIMIT", "JOB_SECONDS", "BATCH_SECONDS", "VIDEO_EXTENSIONS"
+    ], key)])
+    error_message = "Only documented operational settings are allowed; never put secrets here."
   }
 }
