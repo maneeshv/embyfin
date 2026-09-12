@@ -75,7 +75,7 @@ function filters(params,folderView=false){
     select('Watch state','watched',[['','Any'],['0','Unwatched'],['1','Watched']],params.get('watched')||''),
     folderView?select('Search scope','scope',[['folder','This folder and descendants'],['global','All my libraries']],params.get('scope')||'folder'):null,
     el('button',{type:'submit'},'Search'));
-  form.addEventListener('submit',event=>{event.preventDefault();const data=Object.fromEntries(new FormData(form));location.hash=href({...data,offset:null,section:null,folder:folderView&&data.scope!=='global'?params.get('folder'):null,id:null});});
+  form.addEventListener('submit',event=>{event.preventDefault();const data=Object.fromEntries(new FormData(form));location.hash=href({...data,offset:null,section:null,folder:folderView&&data.scope!=='global'&&data.library===params.get('library')?params.get('folder'):null,id:null});});
   return form;
 }
 function paginate(data,params){return el('nav',{class:'pagination','aria-label':'Pages'},data.offset>0?el('a',{href:href({offset:Math.max(0,data.offset-data.limit)},params)},'← Previous'):null,
@@ -95,15 +95,20 @@ async function library(main,params){
   main.append(data.items.length?el('div',{class:'grid'},data.items.map(card)):el('div',{class:'empty'},'No matching videos. Try another search or check the scan status.'),paginate(data,params));
 }
 async function folderPage(main,params){
-  const scoped=new URLSearchParams(params);if(!scoped.get('library')&&libraryList[0])scoped.set('library',libraryList[0].id);
+  const scoped=new URLSearchParams(params);
   if(!scoped.get('sort'))scoped.set('sort','name');if(!scoped.get('direction'))scoped.set('direction','asc');
   const libraryId=scoped.get('library'),folder=scoped.get('folder')||'';
   main.append(el('div',{class:'page-title'},el('div',{},el('h1',{},'Folders'),el('p',{class:'muted'},'Browse the structure you already know.'))),filters(scoped,true));
-  if(!libraryId){main.append(el('div',{class:'empty'},'No shared libraries yet.'));return;}
-  const crumbs=el('nav',{class:'breadcrumbs','aria-label':'Folder breadcrumbs'},el('a',{href:href({folder:null,library:libraryId,offset:null},scoped)},libraryList.find(l=>l.id===libraryId)?.name||'Library'));
+  if(!libraryList.length){main.append(el('div',{class:'empty'},'No shared libraries yet.'));return;}
+  if(!libraryId&&!scoped.get('q')){
+    main.append(el('div',{class:'folder-grid'},libraryList.map(l=>el('a',{class:'folder',href:href({library:l.id,folder:null,offset:null},scoped)},el('span',{'aria-hidden':true},'▱'),el('span',{},l.name)))));
+    return;
+  }
+  const crumbs=el('nav',{class:'breadcrumbs','aria-label':'Folder breadcrumbs'},el('a',{href:'#view=folders'},'All libraries'));
+  if(libraryId)crumbs.append(' / ',el('a',{href:href({folder:null,library:libraryId,offset:null},scoped)},libraryList.find(l=>l.id===libraryId)?.name||'Library'));
   let path='';for(const name of folder.split('/').filter(Boolean)){path+=name+'/';crumbs.append(' / ',el('a',{href:href({folder:path,offset:null},scoped)},name));}main.append(crumbs);
   const query=new URLSearchParams(scoped);query.set('folder',folder);query.set('sort',scoped.get('sort')||'name');query.set('direction',scoped.get('direction')||'asc');
-  if(scoped.get('q')){if(scoped.get('scope')==='global'){query.delete('folder');query.delete('library');}else query.set('recursive','1');}
+  if(scoped.get('q')){if(scoped.get('scope')==='global'||!libraryId){query.delete('folder');query.delete('library');}else query.set('recursive','1');}
   if(!scoped.get('q')){
     const container=el('div',{class:'folder-grid'});let offset=0;
     const more=button('More folders',()=>loadFolders());
