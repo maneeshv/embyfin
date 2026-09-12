@@ -1,6 +1,7 @@
 """Check/export the public working tree without copying Git history or ignored files."""
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -22,14 +23,26 @@ def findings(data, identifiers=()):
     return problems
 
 
+def safe_link(path):
+    # Agent config links (CLAUDE.md -> AGENTS.md, .claude/skills -> ../.agents/skills) stay inside the tree.
+    target = os.readlink(path)
+    root = Path.cwd().resolve()
+    return not Path(target).is_absolute() and (path.parent / target).resolve().is_relative_to(root) and path.exists()
+
+
 def public_files():
     # Git knows the public boundary; newly authored files still appear before commit.
     names = subprocess.check_output(['git', 'ls-files', '-z', '--cached', '--others', '--exclude-standard']).decode().split('\0')
     result = []
     for name in sorted(set(filter(None, names))):
         path = Path(name)
-        if path.is_symlink() or any(parent.is_symlink() for parent in path.parents):
+        if any(parent.is_symlink() for parent in path.parents):
             raise ValueError('Symlink in public tree: ' + name)
+        if path.is_symlink():
+            if not safe_link(path):
+                raise ValueError('Symlink in public tree: ' + name)
+            result.append(path)  # Relative link inside the tree; its target is checked under its own name.
+            continue
         if not path.exists():
             continue  # Tracked deletion awaiting review.
         if not path.is_file() or path.is_absolute() or '..' in path.parts:
@@ -49,7 +62,7 @@ def main():
     if not isinstance(identifiers, list) or not all(isinstance(x, str) for x in identifiers):
         raise ValueError('Identifier file must contain a JSON string array')
     files = public_files()
-    errors = [(str(path), findings(path.read_bytes(), identifiers)) for path in files]
+    errors = [(str(path), findings(path.read_bytes(), identifiers)) for path in files if not path.is_symlink()]
     errors = [(name, reasons) for name, reasons in errors if reasons]
     if errors:
         for name, reasons in errors:
@@ -60,6 +73,9 @@ def main():
         for path in files:
             target = args.export / path
             target.parent.mkdir(parents=True, exist_ok=True)
+            if path.is_symlink():
+                os.symlink(os.readlink(path), target)
+                continue
             shutil.copyfile(path, target)
             target.chmod(0o755 if path.stat().st_mode & 0o111 else 0o644)
     print(f'Checked {len(files)} public files. No matching sensitive values found; manual binary/history review is still required.')

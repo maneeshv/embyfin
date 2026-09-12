@@ -15,6 +15,23 @@ class PublicCheckTest(unittest.TestCase):
         self.assertTrue(check.findings(('account_id = "' + 'a' * 32 + '"').encode()))
         self.assertEqual(check.findings(b'account_id = "00000000000000000000000000000000"\nMACHINE_SECRET='), [])
 
+    def test_symlinks_must_stay_inside_the_tree(self):
+        import os, tempfile
+        cwd = os.getcwd()
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
+            try:
+                Path('AGENTS.md').write_text('rules')
+                os.symlink('AGENTS.md', 'CLAUDE.md')
+                os.symlink('/etc/passwd', 'absolute')
+                os.symlink('../outside', 'escape')
+                os.symlink('missing', 'dangling')
+                self.assertTrue(check.safe_link(Path('CLAUDE.md')))
+                for name in ('absolute', 'escape', 'dangling'):
+                    self.assertFalse(check.safe_link(Path(name)), name)
+            finally:
+                os.chdir(cwd)
+
 
 if __name__ == '__main__':
     unittest.main()
