@@ -17,8 +17,8 @@ function href(changes,base=route()){const next=new URLSearchParams(base);for(con
 const size=n=>new Intl.NumberFormat(undefined,{maximumFractionDigits:1}).format(n/1024**(n>=1024**3?3:2))+(n>=1024**3?' GiB':' MiB');
 function duration(seconds){if(seconds==null)return 'Unknown';const n=Math.floor(seconds);return n>=3600?`${Math.floor(n/3600)}:${String(Math.floor(n%3600/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`:`${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`;}
 const date=value=>value?new Date(typeof value==='number'?value*1000:value).toLocaleString(): 'Not yet';
-function clearPrivate(){
-  epoch++;for(const c of pending)c.abort();pending.clear();cleanup();cleanup=()=>{};
+function clearPrivate(saveProgress=false){
+  cleanup(saveProgress);cleanup=()=>{};epoch++;for(const c of pending)c.abort();pending.clear();
   if(player){player.pause();player.removeAttribute('src');player.load();player=null;}
   root.replaceChildren();notice.textContent='';account=null;libraryList=[];scrolls.clear();
 }
@@ -122,10 +122,17 @@ async function videoPage(main,params){
   const content=el('div',{class:'details'}),media=el('div',{class:'detail-media'},poster(v)),diagnostic=el('div',{'aria-live':'polite'});
   main.append(content);content.append(el('a',{class:'muted',href:href({view:params.get('from')||'library',id:null,from:null})},'← Back to videos'),el('h1',{},v.filename),el('p',{class:'muted'},v.library_name+' / '+v.path),media);
   let session=null,seq=0,lastSave=0,retries=0,saveEnabled=true;
-  async function save(ended=false,source=player){
+  async function save(ended=false,source=player,leaving=false){
     if(!session||!player||source!==player||currentEpoch!==epoch||!saveEnabled)return;
     lastSave=Date.now();
-    try{await api(`/api/videos/${v.id}/progress`,{revision:v.revision,generation:session.generation,sequence:++seq,position:Math.min(player.currentTime,v.duration||31536000),ended},uid);}
+    const path=`/api/videos/${v.id}/progress`,data={revision:v.revision,generation:session.generation,sequence:++seq,position:Math.min(player.currentTime,v.duration||31536000),ended};
+    if(leaving){
+      // Keep the final write alive after teardown; the server still checks user and session identity.
+      try{await fetch(path,{method:'POST',credentials:'same-origin',redirect:'manual',keepalive:true,
+        headers:{'Content-Type':'application/json','X-Embyfin-User':uid},body:JSON.stringify(data)});}catch{}
+      return;
+    }
+    try{await api(path,data,uid);}
     catch(error){if(error.code==='stale_playback'||error.code==='source_changed'){saveEnabled=false;toast('Playback state changed in another session. Open this video again to save progress.');}else if(error.status===401){player?.pause();diagnostic.replaceChildren(errorBox(error));}}
   }
   async function diagnose(){
@@ -163,7 +170,7 @@ async function videoPage(main,params){
     v.available?button('Start over',()=>start(true)):null,favorite,watched),diagnostic,
     el('p',{class:'muted'},'Original playback depends on this browser and device. No automatic transcoding.'),
     el('dl',{class:'facts'},[['Duration',duration(v.duration)],['File size',size(v.bytes)],['Source modified',date(v.modified)],['First discovered',date(v.first_seen)],['Dimensions',v.width&&v.height?`${v.width} × ${v.height}`:'Unknown'],['Container',v.container||'Unknown'],['Video codec',v.video_codec||'Unknown'],['Audio codec',v.audio_codec||'Unknown'],['Processing',v.enrichment+(v.processing_error?' · '+v.processing_error.replaceAll('_',' '):'')]].map(([k,val])=>el('div',{},el('dt',{},k),el('dd',{},val)))));
-  cleanup=()=>{saveEnabled=false;session=null;};
+  cleanup=(saveProgress=false)=>{if(saveProgress)void save(player?.ended||false,player,true);saveEnabled=false;session=null;};
 }
 function table(headers,rows){return el('div',{class:'table-wrap'},el('table',{},el('thead',{},el('tr',{},headers.map(h=>el('th',{scope:'col'},h)))),el('tbody',{},rows.map(row=>el('tr',{},row.map(cell=>el('td',{},cell)))))));}
 async function settings(main){
@@ -206,7 +213,7 @@ async function settings(main){
 async function render(){
   if(!account)return;
   if(routeKey)scrolls.set(routeKey,window.scrollY);const saved=scrolls.get(location.hash)||0;routeKey=location.hash;
-  epoch++;for(const c of pending)c.abort();pending.clear();cleanup();cleanup=()=>{};if(player){player.pause();player.removeAttribute('src');player.load();player=null;}
+  cleanup(true);cleanup=()=>{};epoch++;for(const c of pending)c.abort();pending.clear();if(player){player.pause();player.removeAttribute('src');player.load();player=null;}
   const generation=epoch,params=route(),view=params.get('view')||'library',main=shell(view);
   main.setAttribute('aria-busy','true');
   try{if(view==='video')await videoPage(main,params);else if(view==='folders')await folderPage(main,params);else if(view==='settings')await settings(main);else await library(main,params);if(epoch===generation)window.scrollTo(0,saved);}
@@ -224,7 +231,7 @@ channel?.addEventListener('message',event=>{if(event.data==='logout')remoteLogou
 window.addEventListener('storage',event=>{if(event.key==='embyfin-logout')remoteLogout();});
 window.addEventListener('hashchange',()=>void render());
 document.querySelector('.skip').addEventListener('click',event=>{event.preventDefault();document.querySelector('#main')?.focus();});
-window.addEventListener('pagehide',clearPrivate);
+window.addEventListener('pagehide',()=>clearPrivate(true));
 window.addEventListener('pageshow',event=>{if(event.persisted)void boot();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden)clearPrivate();else void boot();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)clearPrivate(true);else void boot();});
 void boot();
