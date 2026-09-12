@@ -2,6 +2,10 @@
 
 Private video catalog for an existing R2 bucket. Implements the P0 application paths in [PRD.md](PRD.md): a Worker/API and responsive browser UI, D1 catalog and personal state, resumable scans, a bounded FFmpeg Container, and export/recovery tooling. No media is uploaded or moved as part of onboarding.
 
+## Contributing with coding agents
+
+[AGENTS.md](AGENTS.md) holds the shared rules for Codex, Claude Code and other agents: commit standard, pull request format, coding standards and repository rules. `CLAUDE.md` is a symlink to it. Shared skills live in `.agents/skills/` (Claude Code reads them through the `.claude/skills` symlink).
+
 ## Run locally
 
 Requires Node 22.13+ (the integration checks use built-in SQLite), npm, Python 3.9+, and FFmpeg/FFprobe on PATH. Production uses Python 3.12 inside Linux/amd64.
