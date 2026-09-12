@@ -1,0 +1,83 @@
+{
+  "name": "embyfin",
+  "account_id": "00000000000000000000000000000000",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-10",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "media.example.com",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "embyfin",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "POSTERS",
+      "bucket_name": "embyfin-posters"
+    },
+    {
+      "binding": "BACKUPS",
+      "bucket_name": "embyfin-backups"
+    }
+  ],
+  "containers": [
+    {
+      "class_name": "MediaController",
+      "image": "./processor/Dockerfile",
+      "image_build_context": ".",
+      "instance_type": "standard-2",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "PROCESSOR",
+        "class_name": "MediaController"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "MediaController"
+      ]
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
+  },
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "MAINTENANCE": "false",
+    "PROCESSING_ENABLED": "false",
+    "PROCESSING_SAMPLE": "",
+    "BACKUP_HOUR_UTC": "2",
+    "JOB_READ_LIMIT": "268435456",
+    "JOB_SECONDS": "120",
+    "BATCH_SECONDS": "600",
+    "VIDEO_EXTENSIONS": "mp4,m4v,mov,webm,mkv,avi,mpg,mpeg,mts,m2ts,ts,wmv,flv,ogv"
+  }
+}

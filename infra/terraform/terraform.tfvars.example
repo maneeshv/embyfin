@@ -1,0 +1,19 @@
+# Copy to .private/terraform.tfvars and replace every example value.
+account_id         = "00000000000000000000000000000000"
+hostname           = "media.example.com"
+owner_email        = "owner@example.com"
+access_team_domain = "your-team.cloudflareaccess.com"
+login_method_id    = "00000000-0000-0000-0000-000000000001"
+source_endpoint    = "https://00000000000000000000000000000000.r2.cloudflarestorage.com"
+source_bucket      = "your-original-videos"
+source_scope       = ""
+adopt_existing     = false
+# Existing installation only: set adopt_existing=true and supply all five IDs.
+# existing_resources = {
+#   catalog          = "DATABASE_UUID"
+#   owner_policy     = "OWNER_POLICY_UUID"
+#   processor_policy = "PROCESSOR_POLICY_UUID"
+#   browser_app      = "BROWSER_APP_UUID"
+#   processor_app    = "PROCESSOR_APP_UUID"
+# }
+# runtime_settings = { PROCESSING_ENABLED = "true" }

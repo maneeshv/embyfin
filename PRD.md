@@ -1,6 +1,6 @@
 # Embyfin — Product requirements and user stories
 
-**Status:** Proposed implementation baseline; no application has been built or deployed.  
+**Status:** Product requirements baseline; deployment evidence is maintained privately.
 **Date:** 2026-09-10  
 **Product:** A private, shared video library built directly on object storage.  
 **Initial storage provider:** Cloudflare R2. AWS S3 follows through a narrow storage adapter.
@@ -9,7 +9,7 @@
 
 ## 1. Product outcome
 
-Turn an existing collection of approximately 600 GB of videos in R2 into a searchable, thumbnail-based streaming library. Users can browse their existing folders, find a video by its filename or path, watch compatible originals, and return to their own viewing history. The owner controls who can see each library.
+Turn an existing collection of videos in R2 into a searchable, thumbnail-based streaming library. Users can browse their existing folders, find a video by its filename or path, watch compatible originals, and return to their own viewing history. The owner controls who can see each library.
 
 The original objects remain where they are. No re-upload, filesystem mount, media volume, or permanent local mirror is required. A database stores the catalog and application state; generated thumbnails live in a separate object-storage bucket.
 
@@ -17,11 +17,11 @@ This is a video-library product inspired by Emby and Jellyfin, not a movie-ident
 
 ## 2. Confirmed requirements and working assumptions
 
-### Confirmed by the user
+### Product requirements
 
 | Requirement | Product consequence |
 | --- | --- |
-| Approximately 600 GB of videos already exist in R2. | Discover existing objects in place; uploading is not the onboarding flow. |
+| Videos already exist in an R2 bucket. | Discover existing objects in place; uploading is not the onboarding flow. |
 | R2 first, AWS S3 later through an adapter. | Keep provider-specific listing and reads behind a small boundary from the start. |
 | Multiple users with sharing controls. | Authentication, library permissions, and private per-user viewing state are v1 requirements. |
 | Play originals first; clearly flag incompatible videos. | No automatic transcoding or promise that every original plays in every browser. |
@@ -29,7 +29,6 @@ This is a video-library product inspired by Emby and Jellyfin, not a movie-ident
 | Both Library and Folder/File views are needed. | Provide two views of the same catalog and the same video IDs. |
 | Library should surface viewing activity. | Continue Watching and Recently Watched are primary home sections. |
 | Generate thumbnails from videos. | Media enrichment is part of v1, independent of object listing. |
-| A PRD and user stories are the present deliverable. | No provisioning, bucket access, implementation, or migration occurs during this task. |
 
 ### Defaults chosen for this PRD
 
@@ -41,7 +40,7 @@ This is a video-library product inspired by Emby and Jellyfin, not a movie-ident
 - Temporary, bounded memory/scratch during media processing is allowed. Durable media and application data remain in R2 and D1. This is not a claim of zero temporary bytes outside object storage.
 - Manual scans plus a daily scheduled reconciliation. A scan can be paused and resumed.
 - Cloudflare is the default runtime provider, including containerized media processing. Workers Paid is required; account availability, workload fit, and total costs must be validated before provisioning.
-- No access to the actual bucket was available or attempted. Object count, codecs, durations, largest object, storage class, update frequency, and target devices remain unverified.
+- Object count, codecs, durations, largest object, storage class, update frequency, and target devices must be measured per installation.
 
 These defaults make the requirements implementable without another design round. Section 12 identifies the measurements required before implementation decisions become release promises.
 
@@ -161,7 +160,7 @@ These preserve the relevant Emby/Jellyfin ideas from the earlier feature discuss
 | FUT-04 | P1 | As a viewer, I want to download an original so I can open it locally or watch offline. | Explicit authorized download; no managed offline sync/native app in this story. Hiding the button is not copy protection. |
 | FUT-05 | P1 | As an owner, I want to replace an unhelpful poster so the video is recognizable. | Choose another timestamp and regenerate a versioned image; original remains unchanged. |
 | FUT-06 | Later | As an owner, I want to connect AWS S3 so I can use the same library experience with another provider. | Implement the adapter contract, authorization/Range tests, region/signing behavior, and provider-specific transfer-cost controls. |
-| FUT-07 | Later | As an owner, I want compatible renditions of selected videos so more devices can play them. | Opt-in remux/transcode, measured cost, progress/cancel, separate objects; never rewrite originals or silently process all 600 GB. |
+| FUT-07 | Later | As an owner, I want compatible renditions of selected videos so more devices can play them. | Opt-in remux/transcode, measured cost, progress/cancel, separate objects; never rewrite originals or silently process the entire collection. |
 | FUT-08 | Later | As a viewer, I want subtitles and audio-track selection so I can choose available languages. | Surface tracks only when present or supplied; do not assume personal videos have external subtitle metadata. |
 | FUT-09 | Later | As a viewer, I want casting or a native TV client so I can watch on a larger screen. | Requires a tested device-specific authentication and streaming flow. Browser fullscreen alone is not casting. |
 | FUT-10 | Later | As an owner, I want to share a single video so I can grant narrower access than a library. | Authenticated item grants first; explicit expiry/revocation if public links are ever added. |
@@ -248,7 +247,7 @@ Data flow:
 
 ### Why D1 rather than a hosted SQLite file
 
-D1 avoids operating a database server or persistent filesystem for the application, and fits a modest shared catalog. The videos' 600 GB size is not the database size: object count and stored metadata determine catalog capacity. Keep binary media and images out of SQL. Develop against local D1 with the same migrations; do not maintain a second production SQLite deployment.
+D1 avoids operating a database server or persistent filesystem for the application, and fits a modest shared catalog. The total video size is not the database size: object count and stored metadata determine catalog capacity. Keep binary media and images out of SQL. Develop against local D1 with the same migrations; do not maintain a second production SQLite deployment.
 
 D1 currently allows 500 MB per database on the free plan and 10 GB on paid. It supports FTS5 if future search needs it. These are provider facts; suitability for this collection remains a measurement, not a capacity guarantee. [D1 limits](https://developers.cloudflare.com/d1/platform/limits/), [D1 SQL support](https://developers.cloudflare.com/d1/sql-api/sql-statements/)
 
@@ -404,7 +403,7 @@ For initial enrichment, report success rate on supported fixtures and separately
 
 ### Cost model
 
-Existing source storage is already an expense; do not present it as a new duplicate-storage requirement. At the currently documented R2 Standard rate of $0.015/GB-month, a constant 600 GB is approximately $9/month before free allocation, or $8.85 if the account's full 10 GB allocation is available. This is an illustration, not the user's bill; units, storage class, account usage, and taxes may differ. R2 Internet egress is free, but requests, connected services, and Infrequent Access retrieval can incur charges. [R2 pricing](https://developers.cloudflare.com/r2/pricing/)
+Existing source storage is already an expense; do not present it as a new duplicate-storage requirement. At the currently documented R2 Standard rate of $0.015/GB-month, an illustrative 100 GB is approximately $1.50/month before free allocation, or $1.35 if the account's full 10 GB allocation is available. This is an illustration, not the user's bill; units, storage class, account usage, and taxes may differ. R2 Internet egress is free, but requests, connected services, and Infrequent Access retrieval can incur charges. [R2 pricing](https://developers.cloudflare.com/r2/pricing/)
 
 Incremental cost includes the Workers Paid plan, Worker requests/CPU, Durable Object requests/duration/storage, D1 reads/writes/storage, source list/read operations, Containers CPU/memory/disk, image storage, logs, artifact uploads/storage, and backups. D1 pricing is based on rows read/written and storage, so repeated unindexed catalog searches must be measured. [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/)
 
@@ -416,7 +415,7 @@ Do not promise a total monthly price until the sample establishes file count, ty
 
 | Phase | Deliverable | Exit criteria |
 | --- | --- | --- |
-| 0 — Validate inputs | Representative-sample working flow: R2 scan → D1 catalog → Container-generated thumbnails → browse/play/seek | Demonstrate the integrated flow and isolation between two users with disjoint library grants. Measure playback including audio/seeking, thumbnail yield, resource use, retries, shutdown, and projected cost. Owner accepts the browser/device coverage, resource limits, cost range and spending ceiling, plus non-overlapping library prefixes before the first scan, including the root-library restriction. Sample results do not guarantee all 600 GB. |
+| 0 — Validate inputs | Representative-sample working flow: R2 scan → D1 catalog → Container-generated thumbnails → browse/play/seek | Demonstrate the integrated flow and isolation between two users with disjoint library grants. Measure playback including audio/seeking, thumbnail yield, resource use, retries, shutdown, and projected cost. Owner accepts the browser/device coverage, resource limits, cost range and spending ceiling, plus non-overlapping library prefixes before the first scan, including the root-library restriction. Sample results do not guarantee the entire collection. |
 | 1 — Catalog and access | R2 connection, resumable scan, D1 catalog, users/library grants, both views, filename/path search | Multi-page scan completes after the browser closes; pause survives daily scheduling; overlapping ticks are safe; admission and account switching pass; no unshared content or source mutation. |
 | 2 — Play and enrich | Private ranged playback, FFmpeg jobs/posters, probe metadata, incompatibility states | End-to-end play/seek and poster generation on representative files; stale/failed jobs isolated; browser errors actionable. |
 | 3 — Personal library and operations | Continue Watching, Recently Watched, Favorites, cross-device state, scheduled refresh, recovery | All P0 stories and isolation/recovery targets pass; owner accepts backup RPO/RTO and export maintenance; recovery succeeds without the app; actual inventory is reconciled and enrichment outcomes are reported. |
@@ -481,7 +480,7 @@ Feature inspiration: [Emby overview](https://emby.media/), [Emby feature matrix]
 
 No answer is needed to review this PRD. Before building or provisioning, establish:
 
-1. Actual file count, total bytes, largest file, extensions/codecs, and source storage class. The 600 GB estimate alone does not size compute or the catalog.
+1. Actual file count, total bytes, largest file, extensions/codecs, and source storage class. Total bytes alone do not size compute or the catalog.
 2. Which prefixes form shareable libraries, and which initial users should see each. Reject overlapping scopes in v1 rather than infer permission precedence.
 3. Target browsers/devices and a representative read-only sample. Report per-device playable fraction with its sample denominator and coverage limits, and obtain owner acceptance rather than invent a universal target.
 4. Frequency of new uploads/replacements. Daily scan starts, one-minute continuation/dispatch ticks, and 15-minute enrichment cadence are provisional defaults.
@@ -505,6 +504,6 @@ All six committee recommendation groups are adopted. They close correctness or o
 | Revision-aware recent activity | Adopt; a same-key replacement must not inherit viewing activity for old content. | LIB-03; PLAY-04; section 5 |
 | Phase-zero acceptance | Adopt measured browser/playable coverage and prefix-sharing acceptance; passing a few fixtures is not sufficient evidence that the product serves this collection. | ING-02; sections 10/12 |
 
-Provider capabilities were rechecked against official documentation on 2026-09-10, using Context7 before supplemental browsing. Native reviews examined the original committee findings and the Container lifecycle/limits/costs. Sources are linked beside the relevant decisions. No actual R2 inventory, runtime test, provisioning, or deployment has occurred; all performance, budget, and recovery values remain targets pending the stated acceptance gates.
+Provider capabilities were rechecked against official documentation on 2026-09-10, using Context7 before supplemental browsing. Native reviews examined the original committee findings and the Container lifecycle/limits/costs. Sources are linked beside the relevant decisions. Actual inventory, runtime tests and deployment history belong in the private acceptance record; this PRD does not certify a deployment.
 
 The initial Fable 5.1 attempt failed with `API Error: 400 unknown provider for model claude-fable-5.1`. During this revision, Claude Code readiness succeeded but automatic approval review rejected the consultation before model launch because it could export private PRD/repository contents to an external Claude service. No Fable advice informed this revision; the updated baseline is based on documented capabilities, native reviews, and the confirmed requirements.

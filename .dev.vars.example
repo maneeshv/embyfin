@@ -1,0 +1,7 @@
+# Production Worker secrets: wrangler secret put NAME
+SOURCE_ACCESS_KEY_ID=
+SOURCE_SECRET_ACCESS_KEY=
+CF_API_TOKEN=
+# Random 32+ bytes. Never passed to a browser or processor.
+MACHINE_SECRET=
+# Local source connection may use a read-only test R2 credential; never commit it.
