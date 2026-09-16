@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 class Element {
   constructor(tag){this.tag=tag;this.childNodes=[];this.listeners={};}
-  append(...children){this.childNodes.push(...children);}
+  append(...children){this.childNodes.push(...children);}remove(){}
   setAttribute(key,value){this[key]=value;}
   addEventListener(name,fn){this.listeners[name]=fn;}
 }
@@ -42,4 +42,16 @@ test('Switching libraries resets the previous folder',()=>{
   form.listeners.submit({preventDefault(){}});
   const query=new URLSearchParams(context.location.hash.slice(1));
   assert.equal(query.get('library'),'b');assert.equal(query.has('folder'),false);
+});
+
+test('Posters shimmer until the image lands and the sidebar survives navigation',async()=>{
+  const context=page();
+  const loaded=vm.runInContext("poster({poster:'/api/videos/1/poster?r=x',enrichment:'ready'})",context);
+  assert.equal(loaded.className,'poster loading');
+  const img=loaded.childNodes.find(n=>n.tag==='img');assert.equal(img.loading,'lazy');
+  img.listeners.load();assert.equal(loaded.className,'poster');
+  const failed=vm.runInContext("poster({poster:'/api/videos/2/poster?r=x',enrichment:'ready'})",context);
+  failed.childNodes.find(n=>n.tag==='img').listeners.error();
+  assert.equal(failed.className,'poster');assert.equal(failed.childNodes[1].textContent,'Poster unavailable');
+  assert.equal(vm.runInContext("poster({poster:null,enrichment:'pending'})",context).className,'poster');
 });

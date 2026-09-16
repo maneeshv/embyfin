@@ -1,5 +1,5 @@
 const root=document.querySelector('#app'),notice=document.querySelector('#notice');
-let account=null,epoch=0,pending=new Set(),player=null,cleanup=()=>{},local=false,libraryList=[],scrolls=new Map(),routeKey='';
+let account=null,epoch=0,pending=new Set(),player=null,cleanup=()=>{},flush=()=>{},local=false,libraryList=[],scrolls=new Map(),routeKey='';
 const channel=typeof BroadcastChannel==='function'?new BroadcastChannel('embyfin-account'):null;
 function el(tag,props={},...children){
   const node=document.createElement(tag);
@@ -18,7 +18,7 @@ const size=n=>new Intl.NumberFormat(undefined,{maximumFractionDigits:1}).format(
 function duration(seconds){if(seconds==null)return 'Unknown';const n=Math.floor(seconds);return n>=3600?`${Math.floor(n/3600)}:${String(Math.floor(n%3600/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`:`${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`;}
 const date=value=>value?new Date(typeof value==='number'?value*1000:value).toLocaleString(): 'Not yet';
 function clearPrivate(saveProgress=false){
-  cleanup(saveProgress);cleanup=()=>{};epoch++;for(const c of pending)c.abort();pending.clear();
+  cleanup(saveProgress);cleanup=flush=()=>{};epoch++;for(const c of pending)c.abort();pending.clear();
   if(player){player.pause();player.removeAttribute('src');player.load();player=null;}
   root.replaceChildren();notice.textContent='';account=null;libraryList=[];scrolls.clear();
 }
@@ -46,19 +46,24 @@ async function action(button,fn){button.disabled=true;try{await fn();}catch(erro
 function button(text,fn,primary=false){const b=el('button',{type:'button',class:primary?'primary':''},text);b.addEventListener('click',()=>action(b,fn));return b;}
 function logout(){clearPrivate();channel?.postMessage('logout');try{localStorage.setItem('embyfin-logout',String(Date.now()));}catch{}location.assign('/cdn-cgi/access/logout');}
 function shell(view){
-  const nav=el('nav',{class:'nav','aria-label':'Main navigation'},[
-    ['Library','library'],['Folders','folders'],['Favorites','favorites'],...(account.role==='owner'?[['Settings','settings']]:[]),
-  ].map(([title,key])=>el('a',{href:'#view='+key,'aria-current':view===key?'page':null},title)));
-  const main=el('main',{id:'main',class:'workspace',tabIndex:-1});
-  root.replaceChildren(el('div',{class:'shell'},el('aside',{class:'sidebar'},
-    el('a',{href:'#view=library',class:'brand'},el('span',{class:'brand-mark','aria-hidden':true},'▷'),'embyfin'),
-    el('div',{},el('p',{class:'eyebrow'},'Your collection'),nav),
-    el('div',{class:'account'},el('strong',{},account.email),el('span',{class:'muted'},local?'Local development':account.role==='owner'?'Library owner':'Private library'),button('Sign out',logout))),main));
+  const main=el('main',{id:'main',class:'workspace',tabIndex:-1,'data-view':view}),existing=root.querySelector('.nav');
+  // The sidebar survives navigation; only the workspace is replaced, so nothing outside it flashes.
+  if(existing){for(const a of existing.children)if(a.dataset.view===view)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');root.querySelector('main').replaceWith(main);}
+  else{
+    const nav=el('nav',{class:'nav','aria-label':'Main navigation'},[
+      ['Library','library'],['Folders','folders'],['Favorites','favorites'],...(account.role==='owner'?[['Settings','settings']]:[]),
+    ].map(([title,key])=>el('a',{href:'#view='+key,'data-view':key,'aria-current':view===key?'page':null},title)));
+    root.replaceChildren(el('div',{class:'shell'},el('aside',{class:'sidebar'},
+      el('a',{href:'#view=library',class:'brand'},el('span',{class:'brand-mark','aria-hidden':true},'▷'),'embyfin'),
+      el('div',{},el('p',{class:'eyebrow'},'Your collection'),nav),
+      el('div',{class:'account'},el('strong',{},account.email),el('span',{class:'muted'},local?'Local development':account.role==='owner'?'Library owner':'Private library'),button('Sign out',logout))),main));
+  }
   main.append(el('div',{class:'topline'},el('span',{class:'eyebrow'},'Private video library'),el('span',{class:'muted'},`${libraryList.length} ${libraryList.length===1?'library':'libraries'}`)));
   return main;
 }
-function poster(v){const p=el('div',{class:'poster'},el('span',{class:'poster-symbol','aria-hidden':true},'▷'),el('span',{class:'poster-label'},v.enrichment==='failed'?'Poster unavailable':'Poster pending'));
-  if(v.poster){const img=el('img',{src:v.poster,alt:'',loading:'lazy',decoding:'async'});img.addEventListener('error',()=>img.remove());p.append(img);}
+function poster(v){const label=el('span',{class:'poster-label'},v.poster?'':v.enrichment==='failed'?'Poster unavailable':'Poster pending'),p=el('div',{class:v.poster?'poster loading':'poster'},el('span',{class:'poster-symbol','aria-hidden':true},'▷'),label);
+  if(v.poster){const img=el('img',{src:v.poster,alt:'',loading:'lazy',decoding:'async'}),shown=()=>{p.className='poster';};
+    img.addEventListener('load',shown);img.addEventListener('error',()=>{img.remove();label.textContent='Poster unavailable';shown();});p.append(img);if(img.complete&&img.naturalWidth)shown();}
   if(v.duration!=null)p.append(el('span',{class:'duration'},duration(v.duration)));
   if(v.watched)p.append(el('span',{class:'watched','aria-label':'Watched'},'✓'));return p;}
 function card(v){return el('a',{class:'video-card',href:href({view:'video',id:v.id,from:route().get('view')||'library'})},poster(v),
@@ -87,10 +92,9 @@ async function library(main,params){
   if(!libraryList.length){main.append(el('div',{class:'setup'},el('h2',{},'Your library starts here'),el('p',{},account.role==='owner'?'Connect your source and choose the folders you want to share.':'The owner needs to grant this account access to a library.'),account.role==='owner'?el('a',{href:'#view=settings'},'Open settings →'):null));return;}
   const query=new URLSearchParams(params);query.delete('view');if(favorites)query.set('section','favorites');
   const home=!favorites&&!sectionName&&!params.get('q')&&!params.get('watched')&&!params.get('offset');
-  if(home){const sections=[['Continue Watching','continue'],['Recently Watched','recent'],['Recently Added','added'],['Favorites','favorites']];
-    const rails=await Promise.all(sections.map(([,s])=>api('/api/videos?'+new URLSearchParams({...Object.fromEntries(query),section:s,limit:4}))));
-    sections.forEach(([title,s],i)=>main.append(section(title,rails[i].items,href({section:s,offset:null}))));}
-  const data=await api('/api/videos?'+query);
+  const sections=home?[['Continue Watching','continue'],['Recently Watched','recent'],['Recently Added','added'],['Favorites','favorites']]:[];
+  const [data,...rails]=await Promise.all([api('/api/videos?'+query),...sections.map(([,s])=>api('/api/videos?'+new URLSearchParams({...Object.fromEntries(query),section:s,limit:4})))]);
+  sections.forEach(([title,s],i)=>{if(rails[i].items.length)main.append(section(title,rails[i].items,href({section:s,offset:null})));});
   if(home)main.append(el('div',{class:'section-heading'},el('h2',{},'All Videos'),el('span',{class:'muted'},`${data.total} videos`)));
   main.append(data.items.length?el('div',{class:'grid'},data.items.map(card)):el('div',{class:'empty'},'No matching videos. Try another search or check the scan status.'),paginate(data,params));
 }
@@ -109,21 +113,23 @@ async function folderPage(main,params){
   let path='';for(const name of folder.split('/').filter(Boolean)){path+=name+'/';crumbs.append(' / ',el('a',{href:href({folder:path,offset:null},scoped)},name));}main.append(crumbs);
   const query=new URLSearchParams(scoped);query.set('folder',folder);query.set('sort',scoped.get('sort')||'name');query.set('direction',scoped.get('direction')||'asc');
   if(scoped.get('q')){if(scoped.get('scope')==='global'||!libraryId){query.delete('folder');query.delete('library');}else query.set('recursive','1');}
-  if(!scoped.get('q')){
-    const container=el('div',{class:'folder-grid'});let offset=0;
-    const more=button('More folders',()=>loadFolders());
-    async function loadFolders(){const result=await api('/api/folders?'+new URLSearchParams({library:libraryId,folder,offset}));for(const f of result.items)container.append(el('a',{class:'folder',href:href({folder:f.path,library:libraryId,offset:null},scoped)},el('span',{'aria-hidden':true},'▱'),el('span',{},f.name.slice(0,-1))));offset+=100;more.hidden=!result.more;}
-    await loadFolders();if(container.childNodes.length)main.append(container,more);
-  }
-  const data=await api('/api/videos?'+query);main.append(data.items.length?el('div',{class:'grid'},data.items.map(card)):el('div',{class:'empty'},scoped.get('q')?'No matching videos.':'No videos directly in this folder.'),paginate(data,scoped));
+  const container=el('div',{class:'folder-grid'});let offset=0;
+  const listFolders=()=>api('/api/folders?'+new URLSearchParams({library:libraryId,folder,offset})),more=button('More folders',async()=>add(await listFolders()));
+  const add=result=>{for(const f of result.items)container.append(el('a',{class:'folder',href:href({folder:f.path,library:libraryId,offset:null},scoped)},el('span',{'aria-hidden':true},'▱'),el('span',{},f.name.slice(0,-1))));offset+=100;more.hidden=!result.more;};
+  const [first,data]=await Promise.all([scoped.get('q')?null:listFolders(),api('/api/videos?'+query)]);
+  if(first){add(first);if(container.childNodes.length)main.append(container,more);}
+  main.append(data.items.length?el('div',{class:'grid'},data.items.map(card)):el('div',{class:'empty'},scoped.get('q')?'No matching videos.':'No videos directly in this folder.'),paginate(data,scoped));
 }
 async function videoPage(main,params){
+  const content=el('div',{class:'details'},el('a',{class:'muted',href:href({view:params.get('from')||'library',id:null,from:null})},'← Back to videos'),el('div',{class:'detail-media'},el('div',{class:'poster loading'})));
+  main.append(content);
   const v=await api('/api/videos/'+encodeURIComponent(params.get('id'))),currentEpoch=epoch,uid=account.id;
-  const content=el('div',{class:'details'}),media=el('div',{class:'detail-media'},poster(v)),diagnostic=el('div',{'aria-live':'polite'});
-  main.append(content);content.append(el('a',{class:'muted',href:href({view:params.get('from')||'library',id:null,from:null})},'← Back to videos'),el('h1',{},v.filename),el('p',{class:'muted'},v.library_name+' / '+v.path),media);
-  let session=null,seq=0,lastSave=0,retries=0,saveEnabled=true;
+  const media=el('div',{class:'detail-media'},poster(v)),diagnostic=el('div',{'aria-live':'polite'});
+  content.replaceChildren();content.append(el('a',{class:'muted',href:href({view:params.get('from')||'library',id:null,from:null})},'← Back to videos'),el('h1',{},v.filename),el('p',{class:'muted'},v.library_name+' / '+v.path),media);
+  let session=null,seq=0,lastSave=0,retries=0,saveEnabled=true,flushed=null;
   async function save(ended=false,source=player,leaving=false){
     if(!session||!player||source!==player||currentEpoch!==epoch||!saveEnabled)return;
+    if(leaving){const mark=player.currentTime+(ended?'e':'');if(mark===flushed)return;flushed=mark;}
     lastSave=Date.now();
     const path=`/api/videos/${v.id}/progress`,data={revision:v.revision,generation:session.generation,sequence:++seq,position:Math.min(player.currentTime,v.duration||31536000),ended};
     if(leaving){
@@ -170,7 +176,8 @@ async function videoPage(main,params){
     v.available?button('Start over',()=>start(true)):null,favorite,watched),diagnostic,
     el('p',{class:'muted'},'Original playback depends on this browser and device. No automatic transcoding.'),
     el('dl',{class:'facts'},[['Duration',duration(v.duration)],['File size',size(v.bytes)],['Source modified',date(v.modified)],['First discovered',date(v.first_seen)],['Dimensions',v.width&&v.height?`${v.width} × ${v.height}`:'Unknown'],['Container',v.container||'Unknown'],['Video codec',v.video_codec||'Unknown'],['Audio codec',v.audio_codec||'Unknown'],['Processing',v.enrichment+(v.processing_error?' · '+v.processing_error.replaceAll('_',' '):'')]].map(([k,val])=>el('div',{},el('dt',{},k),el('dd',{},val)))));
-  cleanup=(saveProgress=false)=>{if(saveProgress)void save(player?.ended||false,player,true);saveEnabled=false;session=null;};
+  flush=()=>void save(player?.ended||false,player,true);
+  cleanup=(saveProgress=false)=>{if(saveProgress)flush();saveEnabled=false;session=null;};
 }
 function table(headers,rows){return el('div',{class:'table-wrap'},el('table',{},el('thead',{},el('tr',{},headers.map(h=>el('th',{scope:'col'},h)))),el('tbody',{},rows.map(row=>el('tr',{},row.map(cell=>el('td',{},cell)))))));}
 async function settings(main){
@@ -213,17 +220,17 @@ async function settings(main){
 async function render(){
   if(!account)return;
   if(routeKey)scrolls.set(routeKey,window.scrollY);const saved=scrolls.get(location.hash)||0;routeKey=location.hash;
-  cleanup(true);cleanup=()=>{};epoch++;for(const c of pending)c.abort();pending.clear();if(player){player.pause();player.removeAttribute('src');player.load();player=null;}
+  cleanup(true);cleanup=flush=()=>{};epoch++;for(const c of pending)c.abort();pending.clear();if(player){player.pause();player.removeAttribute('src');player.load();player=null;}
   const generation=epoch,params=route(),view=params.get('view')||'library',main=shell(view);
-  main.setAttribute('aria-busy','true');
-  try{if(view==='video')await videoPage(main,params);else if(view==='folders')await folderPage(main,params);else if(view==='settings')await settings(main);else await library(main,params);if(epoch===generation)window.scrollTo(0,saved);}
+  main.setAttribute('aria-busy','true');if(!saved)window.scrollTo(0,0);
+  try{if(view==='video')await videoPage(main,params);else if(view==='folders')await folderPage(main,params);else if(view==='settings')await settings(main);else await library(main,params);if(epoch===generation&&saved)window.scrollTo(0,saved);}
   catch(error){if(error.name!=='AbortError'&&epoch===generation)main.append(errorBox(error));}
   finally{main.removeAttribute('aria-busy');}
 }
 async function boot(){
   clearPrivate();const generation=epoch;
   root.append(el('main',{id:'main'},el('p',{class:'empty',role:'status'},'Signing in to your library…')));
-  try{const session=await api('/api/session');if(generation!==epoch)return;account=session.user;local=session.local;channel?.postMessage({type:'identity',id:account.id});libraryList=(await api('/api/libraries')).items;await render();}
+  try{const [session,libs]=await Promise.all([api('/api/session'),api('/api/libraries')]);if(generation!==epoch)return;account=session.user;local=session.local;channel?.postMessage({type:'identity',id:account.id});libraryList=libs.items;await render();}
   catch(error){if(error.name!=='AbortError'&&generation===epoch)root.replaceChildren(el('main',{id:'main',class:'workspace'},el('h1',{},'Embyfin'),errorBox(error)));}
 }
 function remoteLogout(){clearPrivate();root.append(el('main',{class:'workspace'},el('h1',{},'Signed out'),el('p',{},'This device changed accounts. Sign in again to continue.'),el('a',{href:'/'},'Sign in')));}
@@ -233,5 +240,6 @@ window.addEventListener('hashchange',()=>void render());
 document.querySelector('.skip').addEventListener('click',event=>{event.preventDefault();document.querySelector('#main')?.focus();});
 window.addEventListener('pagehide',()=>clearPrivate(true));
 window.addEventListener('pageshow',event=>{if(event.persisted)void boot();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden)clearPrivate(true);else void boot();});
+// Hiding the tab flushes progress but keeps the page; returning revalidates identity (api() reboots on a changed or rejected account).
+document.addEventListener('visibilitychange',()=>{if(document.hidden)flush();else if(account)api('/api/session').catch(error=>{if(error.name!=='AbortError'){clearPrivate();void boot();}});else void boot();});
 void boot();
