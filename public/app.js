@@ -20,7 +20,7 @@ const date=value=>value?new Date(typeof value==='number'?value*1000:value).toLoc
 function clearPrivate(saveProgress=false){
   cleanup(saveProgress);cleanup=flush=()=>{};epoch++;for(const c of pending)c.abort();pending.clear();
   if(player){player.pause();player.removeAttribute('src');player.load();player=null;}
-  root.replaceChildren();notice.textContent='';account=null;libraryList=[];scrolls.clear();
+  root.replaceChildren();root.className='';notice.textContent='';account=null;libraryList=[];scrolls.clear();
 }
 class APIError extends Error{constructor(status,code,message){super(message||code);this.status=status;this.code=code;}}
 async function api(path,data,uid=account?.id){
@@ -240,6 +240,10 @@ window.addEventListener('hashchange',()=>void render());
 document.querySelector('.skip').addEventListener('click',event=>{event.preventDefault();document.querySelector('#main')?.focus();});
 window.addEventListener('pagehide',()=>clearPrivate(true));
 window.addEventListener('pageshow',event=>{if(event.persisted)void boot();});
-// Hiding the tab flushes progress but keeps the page; returning revalidates identity (api() reboots on a changed or rejected account).
-document.addEventListener('visibilitychange',()=>{if(document.hidden)flush();else if(account)api('/api/session').catch(error=>{if(error.name!=='AbortError'){clearPrivate();void boot();}});else void boot();});
+// Hiding the tab flushes progress but keeps the page. Returning hides it until identity is revalidated; api() reboots on a changed or rejected account.
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)flush();
+  else if(account){root.className='revalidating';api('/api/session').then(()=>{root.className='';},error=>{if(error.name!=='AbortError'){clearPrivate();void boot();}});}
+  else void boot();
+});
 void boot();
