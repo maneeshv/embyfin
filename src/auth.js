@@ -14,7 +14,9 @@ export async function identity(request, env) {
   } catch { fail(401, 'sign_in_required', 'Sign in again to continue.'); }
 }
 export async function resolveUser(env, claim) {
-  // Only deployment configuration can bootstrap the owner; never promote existing users.
+  const linked = await one(env.DB, 'SELECT id,email,role FROM users WHERE subject=? AND enabled=1',claim.sub);
+  if (linked) return linked;
+  // First admitted sign-in only. Deployment configuration bootstraps the owner; never promote existing users.
   if (claim.email === env.OWNER_EMAIL?.toLowerCase()) await run(env.DB,
     "INSERT OR IGNORE INTO users(id,email,role,created_at) SELECT ?,?,'owner',? WHERE NOT EXISTS(SELECT 1 FROM users WHERE role='owner')", id(),claim.email,now());
   await run(env.DB, 'UPDATE users SET subject=? WHERE email=? COLLATE NOCASE AND subject IS NULL AND enabled=1', claim.sub,claim.email);

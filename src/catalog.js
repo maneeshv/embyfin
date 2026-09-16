@@ -13,7 +13,7 @@ const fields = `v.*,l.name AS library_name,l.prefix,COALESCE(s.favorite,0) favor
 export function publicVideo(v) {
   const {object_key,source_id,search_name,search_path,seen_scan,etag,poster_key,prefix,refresh_requested,...visible} = v;
   visible.path = object_key.slice(prefix.length);
-  visible.poster = poster_key ? `/api/videos/${v.id}/poster` : null;
+  visible.poster = poster_key ? `/api/videos/${v.id}/poster?r=${v.revision.slice(0,16)}` : null; // cache key; bump when posters become regenerable
   return visible;
 }
 export const libraries = (env,user) => all(env.DB, `SELECT l.id,l.name FROM libraries l WHERE l.enabled=1 AND
@@ -24,7 +24,7 @@ export async function video(env,user,videoId) {
 }
 export async function catalog(env,user,params) {
   const where = [access,'v.available=1']; const args = [user.id,user.id];
-  const library = params.get('library'), folder = params.get('folder'), query = string(params.get('q') || '',256,true);
+  const library = string(params.get('library') || '',100,true), folder = params.get('folder'), query = string(params.get('q') || '',256,true);
   if (library) { where.push('l.id=?'); args.push(library); }
   if (folder !== null) {
     string(folder,1024,true);
@@ -39,7 +39,7 @@ export async function catalog(env,user,params) {
   if (params.get('watched') === '1') where.push('s.revision=v.revision AND s.watched=1');
   if (params.get('watched') === '0') where.push('(s.watched IS NULL OR s.watched=0 OR s.revision<>v.revision)');
   const sorts = {name:'v.search_name',added:'v.first_seen',modified:'v.modified',size:'v.bytes',duration:'v.duration'};
-  const sort = section==='added' ? 'v.first_seen' : sorts[params.get('sort')] || 'v.first_seen';
+  const sort = section==='added' ? 'v.first_seen' : (Object.hasOwn(sorts,params.get('sort')) ? sorts[params.get('sort')] : 'v.first_seen');
   const order = ['continue','recent'].includes(section) ? 's.last_watched DESC' : section==='added' ? 'v.first_seen DESC' : `${sort} ${params.get('direction') === 'asc' ? 'ASC':'DESC'}`;
   const limit = Math.max(1,Math.min(100,Number(params.get('limit')) || 36));
   const offset = Math.max(0,Math.min(1000000,Number(params.get('offset')) || 0));

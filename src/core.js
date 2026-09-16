@@ -58,10 +58,10 @@ export const mime = name => ({mp4:'video/mp4',m4v:'video/mp4',mov:'video/quickti
 export function protect(response) {
   const result = new Response(response.body, response);
   for (const [key, value] of Object.entries({
-    'Cache-Control':'private, no-store', 'Vary':'Cookie, Cf-Access-Jwt-Assertion',
+    'Cache-Control':response.headers.get('Cache-Control') || 'private, no-store', 'Vary':'Cookie, Cf-Access-Jwt-Assertion',
     'X-Content-Type-Options':'nosniff', 'Referrer-Policy':'no-referrer',
     'Cross-Origin-Resource-Policy':'same-origin',
-    'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+    'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; media-src 'self'; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
     'Permissions-Policy':'camera=(), microphone=(), geolocation=()',
   })) result.headers.set(key, value);
   return result;

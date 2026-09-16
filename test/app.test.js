@@ -234,3 +234,21 @@ test('controlled sample claims only selected videos and expires without consumin
   assert.equal((await one(env.DB,'SELECT attempts FROM jobs WHERE id=?',job.id)).attempts,1);
   env.PROCESSING_SAMPLE='{}';assert.throws(()=>processingSample(env));
 });
+test('posters cache privately per cookie with a revision-keyed URL and few catalog round trips',async()=>{
+  const {env,alice,bob,v}=await fixture();
+  await env.POSTERS.put('posters/x.jpg',new Uint8Array([255,216,255,217]));await run(env.DB,"UPDATE videos SET poster_key='posters/x.jpg' WHERE id=?",v.id);
+  const listing=await catalog(env,alice,new URLSearchParams({q:'strasse'}));
+  assert.equal(listing.items.find(i=>i.id===v.id).poster,`/api/videos/${v.id}/poster?r=${v.revision.slice(0,16)}`);
+  let trips=0;const prepare=env.DB.prepare.bind(env.DB),batch=env.DB.batch.bind(env.DB);
+  env.DB.prepare=text=>{const q=prepare(text);for(const m of ['first','all','run']){const f=q[m];q[m]=(...a)=>{trips++;return f(...a);};}return q;};env.DB.batch=items=>{trips++;return batch(items);};
+  await request(env,'alice',`/api/videos/${v.id}/poster?r=abc`);trips=0;
+  const r=await request(env,'alice',`/api/videos/${v.id}/poster?r=abc`);
+  assert.equal(r.status,200);assert.equal(r.headers.get('Content-Type'),'image/jpeg');
+  assert.equal(r.headers.get('Cache-Control'),'private, max-age=86400, immutable');
+  assert.match(r.headers.get('Vary'),/Cookie/);
+  assert(trips<=2,`poster request used ${trips} D1 round trips`);
+  assert.equal((await request(env,'bob',`/api/videos/${v.id}/poster?r=abc`)).status,404);
+  const asset=await request(env,'alice','/app.js');assert.equal(asset.headers.get('Cache-Control'),'private, no-cache');
+  assert.equal((await request(env,'alice','/api/videos')).headers.get('Cache-Control'),'private, no-store');
+  assert.equal((await request(env,'alice','/api/videos?sort=constructor')).status,200);
+});

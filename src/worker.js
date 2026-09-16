@@ -4,12 +4,19 @@ import {R2Source} from './storage.js';
 import {catalog,libraries,folders,video,publicVideo,ensureCurrent,personal} from './catalog.js';
 import {scanIntent} from './scans.js';
 import {machine,retryFailed} from './jobs.js';
-import {backupState,maintenance,requestBackup} from './backup.js';
+import {backupState,gate,requestBackup} from './backup.js';
 
+const verified=new WeakSet();
 async function bootstrap(env) {
-  await run(env.DB,"INSERT OR IGNORE INTO sources(id,provider,bucket,scope) VALUES('r2','r2',?,?)",env.SOURCE_BUCKET,env.SOURCE_SCOPE || '');
-  const source=await one(env.DB,"SELECT * FROM sources WHERE id='r2'");
+  // Source configuration only changes with a redeploy, which replaces this isolate: verify once per isolate.
+  if(verified.has(env.DB))return;
+  let source=await one(env.DB,"SELECT bucket,scope FROM sources WHERE id='r2'");
+  if(!source) {
+    await run(env.DB,"INSERT OR IGNORE INTO sources(id,provider,bucket,scope) VALUES('r2','r2',?,?)",env.SOURCE_BUCKET,env.SOURCE_SCOPE || '');
+    source=await one(env.DB,"SELECT bucket,scope FROM sources WHERE id='r2'");
+  }
   if(source.bucket!==env.SOURCE_BUCKET || source.scope!==(env.SOURCE_SCOPE || '')) fail(503,'source_configuration_changed','Source changes require a migration.');
+  verified.add(env.DB);
 }
 async function stream(request,env,source,user,videoId) {
   const v=await video(env,user,videoId), object=await ensureCurrent(env,source,v);
@@ -95,13 +102,13 @@ async function admin(request,env,user,path) {
 export async function handle(request,env,ctx,authenticate=identity) {
   try {
     const path=new URL(request.url).pathname;
-    if(await maintenance(env))fail(503,'maintenance','Library maintenance is in progress. Try again later.');
-    const backup=await backupState(env);
+    const [halted,backup]=await gate(env);
+    if(halted)fail(503,'maintenance','Library maintenance is in progress. Try again later.');
     if(backup && !['complete','failed'].includes(backup.status))fail(503,'backup_maintenance','A database backup is in progress. Try again later.');
     const controller=env.PROCESSOR?.get(env.PROCESSOR.idFromName('media'));
     if(path.startsWith('/machine/'))return protect(await machine(request,env,new R2Source(env),controller));
-    await bootstrap(env);
-    const user=await resolveUser(env,await authenticate(request,env));
+    const [claim]=await Promise.all([authenticate(request,env),bootstrap(env)]);
+    const user=await resolveUser(env,claim);
     if(!['GET','HEAD'].includes(request.method))csrf(request,env,user);
     let result;
     if(path==='/api/session' && request.method==='GET') result=json({user,local:authenticate!==identity,logout:'/cdn-cgi/access/logout'});
@@ -120,7 +127,8 @@ export async function handle(request,env,ctx,authenticate=identity) {
         else if(action==='poster' && ['GET','HEAD'].includes(request.method)) {
           if(!v.poster_key)fail(404,'poster_pending');
           const poster=await env.POSTERS.get(v.poster_key);if(!poster)fail(404,'poster_pending');
-          result=new Response(request.method==='HEAD'?null:poster.body,{headers:{'Content-Type':'image/jpeg','Content-Length':String(poster.size)}});
+          // Revision-keyed URL; private so no shared cache holds it, immutable so the browser skips revalidation until the URL changes.
+          result=new Response(request.method==='HEAD'?null:poster.body,{headers:{'Content-Type':'image/jpeg','Content-Length':String(poster.size),'Cache-Control':'private, max-age=86400, immutable'}});
         } else if(action==='availability' && request.method==='GET') {await ensureCurrent(env,new R2Source(env),v);result=json({available:true,revision:v.revision});}
         else if(['session','progress','favorite','watched'].includes(action) && request.method==='POST') {
           if(action==='session')await ensureCurrent(env,new R2Source(env),v);
@@ -130,7 +138,8 @@ export async function handle(request,env,ctx,authenticate=identity) {
     } else if(path.startsWith('/api/'))fail(404,'not_found');
     else if(['GET','HEAD'].includes(request.method)) {
       if(!['/','/index.html','/app.js','/style.css','/favicon.svg','/recovery.html'].includes(path))fail(404,'not_found');
-      result=await env.ASSETS.fetch(request);
+      const asset=await env.ASSETS.fetch(request);
+      result=new Response(asset.body,asset);result.headers.set('Cache-Control','private, no-cache');
     } else fail(405,'method_not_allowed');
     const authenticated=new Response(result.body,result);
     authenticated.headers.set('X-Embyfin-User',user.id);
