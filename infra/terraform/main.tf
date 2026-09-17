@@ -60,7 +60,7 @@ resource "cloudflare_zero_trust_access_policy" "owner" {
   account_id       = var.account_id
   name             = "Embyfin owner"
   decision         = "allow"
-  include          = [{ email = { email = lower(var.owner_email) } }]
+  include          = [for e in distinct(concat([var.owner_email], var.viewer_emails)) : { email = { email = lower(e) } }]
   connection_rules = { rdp = {} }
 
   lifecycle {

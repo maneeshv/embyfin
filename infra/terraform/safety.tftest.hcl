@@ -5,6 +5,7 @@ variables {
   account_id         = "00000000000000000000000000000000"
   hostname           = "media.test.example"
   owner_email        = "owner@example.com"
+  viewer_emails      = ["viewer@example.com", "OWNER@example.com"]
   access_team_domain = "test-team.cloudflareaccess.com"
   login_method_id    = "00000000-0000-0000-0000-000000000001"
   adopt_existing     = false
@@ -18,11 +19,11 @@ run "private_installation" {
   assert {
     condition = (
       cloudflare_zero_trust_access_policy.owner.decision == "allow" &&
-      one(cloudflare_zero_trust_access_policy.owner.include).email.email == "owner@example.com" &&
+      [for r in cloudflare_zero_trust_access_policy.owner.include : r.email.email] == ["owner@example.com", "viewer@example.com"] &&
       cloudflare_zero_trust_access_application.browser.http_only_cookie_attribute &&
       one(cloudflare_zero_trust_access_application.browser.allowed_idps) == var.login_method_id
     )
-    error_message = "Browser access must retain the owner's Allow policy, selected login provider and HTTPOnly cookie."
+    error_message = "Browser access must admit exactly the owner and listed viewers once, with the selected login provider and HTTPOnly cookie."
   }
 
   assert {

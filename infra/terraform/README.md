@@ -42,7 +42,7 @@ Set `adopt_existing=true` and all five `existing_resources` UUIDs in private tfv
 
 Adoption imports seven resources: D1, two buckets, two policies and two Access apps. The two managed-domain resources cannot be imported with the pinned provider: their initial creates set `enabled=false` on existing buckets' development URLs, without creating buckets or deleting objects. Public custom domains are separate and must also be checked.
 
-Resolve any unexpected changes before applying. Never accept resource replacements, deletion or a broadened Access policy during adoption. Import applies can also change configuration; they are not read-only. A subsequent plan should report no managed resource changes. Adoption does not require SQL migrations, new libraries or rescanning.
+People admitted through the Access dashboard must also appear in `viewer_emails`, or the next plan removes them. Resolve any unexpected changes before applying. Never accept resource replacements, deletion or a broadened Access policy during adoption. Import applies can also change configuration; they are not read-only. A subsequent plan should report no managed resource changes. Adoption does not require SQL migrations, new libraries or rescanning.
 
 ## New installation
 
