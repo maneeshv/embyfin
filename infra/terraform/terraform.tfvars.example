@@ -2,6 +2,7 @@
 account_id         = "00000000000000000000000000000000"
 hostname           = "media.example.com"
 owner_email        = "owner@example.com"
+viewer_emails      = [] # e.g. ["family@example.com"]; admission only, grant libraries in Settings
 access_team_domain = "your-team.cloudflareaccess.com"
 login_method_id    = "00000000-0000-0000-0000-000000000001"
 source_endpoint    = "https://00000000000000000000000000000000.r2.cloudflarestorage.com"

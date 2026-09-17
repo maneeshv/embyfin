@@ -31,6 +31,17 @@ variable "owner_email" {
   }
 }
 
+variable "viewer_emails" {
+  type        = list(string)
+  default     = []
+  nullable    = false
+  description = "Additional people admitted by Access. Application accounts and library grants are still managed in Settings."
+  validation {
+    condition     = alltrue([for e in var.viewer_emails : can(regex("^[^ @]+@[^ @]+\\.[^ @]+$", e))])
+    error_message = "Use complete email addresses for every viewer."
+  }
+}
+
 variable "access_team_domain" {
   type        = string
   description = "Existing Zero Trust team domain, without https://."
