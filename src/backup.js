@@ -2,7 +2,16 @@ import {createHash} from 'node:crypto';
 import {now, one, fail} from './core.js';
 export const backupState = async env => (await env.BACKUPS.get('control/backup.json'))?.json() || null;
 const save = (env,state) => env.BACKUPS.put('control/backup.json',JSON.stringify(state),{httpMetadata:{contentType:'application/json'}});
-export const maintenance = async env => env.MAINTENANCE === 'true' || !!await env.BACKUPS.head('control/maintenance.json');
+const gates=new WeakMap();
+// ponytail: 5-second per-isolate memo of the R2 gate files. Backups drain for 100 seconds before exporting, so a late close is harmless.
+export async function gate(env) {
+  const cached=gates.get(env.BACKUPS);
+  if (cached && cached.until>Date.now()) return cached.value;
+  const value=await Promise.all([env.MAINTENANCE === 'true' || !!await env.BACKUPS.head('control/maintenance.json'),backupState(env)]);
+  gates.set(env.BACKUPS,{value,until:Date.now()+5000});
+  return value;
+}
+export const maintenance = async env => (await gate(env))[0];
 export async function requestBackup(env) {
   if (!env.CF_API_TOKEN || !env.CF_ACCOUNT_ID || !env.CF_DATABASE_ID) fail(503,'backup_not_configured','Configure backup export credentials before starting a backup.');
   const state = await backupState(env);

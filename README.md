@@ -39,7 +39,7 @@ Read-only source requests have no delete/rename/copy path. Exact keys are preser
 
 - `src/worker.js`, `auth.js`, `catalog.js`: private API, Access JWT validation, common grant predicate, literal Unicode search, byte-range streams, account-bound progress.
 - `src/scans.js`, `jobs.js`, `index.ts`: transactional checkpoints, replacement invalidation, leased media jobs, singleton Container lifecycle and Cron.
-- `public/`: native browser UI, Library/Folders/details/settings, player controls, periodic progress, account-switch cleanup. No client data cache, service worker, movie metadata service, or UI framework.
+- `public/`: native browser UI, Library/Folders/details/settings, player controls, periodic progress, account-switch cleanup. Poster images cache in the browser's private HTTP cache under a revision-keyed URL; every other response is `private, no-store`. No client data cache, service worker, movie metadata service, or UI framework.
 - `processor/main.py`: one subprocess at a time; loopback-only metered source proxy; pinned object/revision access; real FFprobe/FFmpeg posters. Source reads are reserved before signing and actual usage is logged. Malformed manifests cannot enable playlist/network demuxers; protocol/format allowlists and fixed subprocess arguments restrict decoding.
 - `src/backup.js`, `ops/`: R2-maintained export state/manifests, streaming checksum, 30-day retention, independent verification and conservative restore SQL.
 

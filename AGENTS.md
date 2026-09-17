@@ -6,12 +6,13 @@ Embyfin is a private video catalog over an existing R2 bucket: a Cloudflare Work
 
 ## Skills
 
-Skills live in `.agents/skills/<name>/SKILL.md` (Codex reads this directly; Claude Code reads it via the `.claude/skills` symlink). Two vendored sets, see `.agents/skills/README.md` for versions and update steps:
+Skills live in `.agents/skills/<name>/SKILL.md` (Codex reads this directly; Claude Code reads it via the `.claude/skills` symlink). Three vendored sets, see `.agents/skills/README.md` for versions and update steps:
 
 - **superpowers** (brainstorming, writing-plans, test-driven-development, systematic-debugging, verification-before-completion, requesting-code-review, finishing-a-development-branch, and more). Read `using-superpowers` at the start of a session and invoke a skill whenever one applies to the task in front of you.
 - **ponytail** (`ponytail`, `ponytail-review`, `ponytail-audit`, `ponytail-debt`). Default mode for all code changes: reuse what exists, prefer the standard library and platform, write the minimum that works, delete before adding.
+- **i-have-adhd** (`i-have-adhd`). Output style for the human partner: lead with the next action, number steps, restate state, no preamble or closers. Explicit invocation only: `/i-have-adhd` in Claude Code, `$i-have-adhd` in Codex. Stays on until "stop adhd mode".
 
-In Claude Code the same skills are also available as plugins (`superpowers@claude-plugins-official`, `ponytail@ponytail`) enabled in `.claude/settings.json`. Plugin versions carry hooks; the vendored copies are the portable source of truth.
+In Claude Code the same skills are also available as plugins (`superpowers@claude-plugins-official`, `ponytail@ponytail`, `i-have-adhd@i-have-adhd`) enabled in `.claude/settings.json`. Plugin versions carry hooks; the vendored copies are the portable source of truth.
 
 ## Commands
 

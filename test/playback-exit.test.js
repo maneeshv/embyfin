@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 
 class Element {
-  constructor(tag){this.tag=tag;this.listeners={};this.currentTime=0;}
+  constructor(tag){this.tag=tag;this.listeners={};this.currentTime=0;this.className='';}
   append(){} replaceChildren(){} setAttribute(){} removeAttribute(){} load(){} pause(){}
   addEventListener(name,fn){this.listeners[name]=fn;}
   querySelector(){return new Element('select');}
@@ -57,4 +57,18 @@ test('Account clearing does not send a final write; ended playback remains compl
   vm.runInContext('player.ended=true',second.context);
   second.events.pagehide();
   assert.equal(JSON.parse(second.requests[0].body).ended,true);
+});
+
+test('Returning to a hidden tab keeps the page but hides it until the session is revalidated',async()=>{
+  const {context,documentEvents,requests}=await playback();
+  const calls=[];vm.runInContext('api=async path=>{calls.push(path);return {user:{id:"viewer"}};}',context);context.calls=calls;
+  context.document.hidden=true;documentEvents.visibilitychange();
+  assert.equal(requests.length,1);assert.equal(vm.runInContext('account?.id',context),'viewer');
+  context.document.hidden=false;const pending=documentEvents.visibilitychange();
+  assert.equal(vm.runInContext('root.className',context),'revalidating');
+  await pending;await new Promise(r=>setImmediate(r));
+  assert.deepEqual(calls,['/api/session']);assert.equal(vm.runInContext('root.className',context),'');
+  vm.runInContext('api=async()=>{throw Object.assign(new Error("gone"),{status:401});};boot=async()=>{calls.push("boot");};',context);
+  documentEvents.visibilitychange();await new Promise(r=>setImmediate(r));
+  assert.equal(calls.at(-1),'boot');assert.equal(vm.runInContext('account',context),null);
 });
