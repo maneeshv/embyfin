@@ -146,20 +146,22 @@ test('Access assertions require signature, expected audience/issuer and expiry',
 });
 test('native streaming returns real byte ranges, HEAD, validators and fails on replacement',async()=>{
   const {env,v}=await fixture();const bytes=new TextEncoder().encode('0123456789'),old=globalThis.fetch;
-  let changed=false;globalThis.fetch=async req=>{
+  let changed=false,heads=0;globalThis.fetch=async req=>{
     const headers={'ETag':changed?'"new"':v.etag,'Last-Modified':new Date(v.modified).toUTCString(),'Content-Type':'video/mp4','Content-Length':'10'};
-    if(req.method==='HEAD')return new Response(null,{headers});
+    if(req.method==='HEAD'){heads++;return new Response(null,{headers});}
+    if(req.headers.get('If-Match')!==headers.ETag)return new Response(null,{status:412,headers});
     const range=byteRange(req.headers.get('Range'),10);
     if(range){headers['Content-Range']=`bytes ${range.start}-${range.end}/10`;headers['Content-Length']=String(range.end-range.start+1);return new Response(bytes.slice(range.start,range.end+1),{status:206,headers});}
     return new Response(bytes,{headers});
   };
   try{
-    let r=await request(env,'alice',`/api/videos/${v.id}/media`,undefined,{Range:'bytes=-3'});assert.equal(r.status,206);assert.equal(r.headers.get('Content-Range'),'bytes 7-9/10');assert.equal(await r.text(),'789');assert.equal(r.headers.get('Cache-Control'),'private, no-store');
+    let r=await request(env,'alice',`/api/videos/${v.id}/media`,undefined,{Range:'bytes=-3'});assert.equal(r.status,206);assert.equal(r.headers.get('Content-Range'),'bytes 7-9/10');assert.equal(await r.text(),'789');assert.equal(r.headers.get('Cache-Control'),'private, max-age=3600');
     r=await request(env,'alice',`/api/videos/${v.id}/media`,undefined,{Range:'bytes=50-'});assert.equal(r.status,416);assert.equal(r.headers.get('Content-Range'),'bytes */10');
     r=await request(env,'alice',`/api/videos/${v.id}/media`,undefined,{'If-None-Match':v.etag});assert.equal(r.status,304);
     r=await request(env,'alice',`/api/videos/${v.id}/media`,undefined,{'If-Match':'W/'+v.etag});assert.equal(r.status,412);
     r=await request(env,'alice',`/api/videos/${v.id}/media`,undefined,{'If-None-Match':'W/'+v.etag});assert.equal(r.status,304);
     changed=true;r=await request(env,'alice',`/api/videos/${v.id}/media`);assert.equal(r.status,409);
+    assert.equal(heads,0);assert.equal((await one(env.DB,'SELECT refresh_requested FROM videos WHERE id=?',v.id)).refresh_requested,1);
   }finally{globalThis.fetch=old;}
 });
 test('processor claims are singleton, paused libraries cannot claim, expired leases and stale callbacks are fenced',async()=>{

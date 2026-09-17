@@ -163,7 +163,7 @@ async function videoPage(main,params){
   async function start(startOver){
     saveEnabled=false;if(player){player.pause();player.removeAttribute('src');player.load();}
     session=await api(`/api/videos/${v.id}/session`,{revision:v.revision,startOver},uid);seq=0;lastSave=Date.now();saveEnabled=true;
-    const video=el('video',{controls:true,playsInline:true,preload:'metadata',poster:v.poster||'',src:`/api/videos/${v.id}/media`});player=video;
+    const video=el('video',{controls:true,playsInline:true,preload:'metadata',poster:v.poster||'',src:`/api/videos/${v.id}/media?r=${v.revision.slice(0,16)}`});player=video;
     video.addEventListener('loadedmetadata',()=>{if(currentEpoch!==epoch||player!==video)return;if(session.position>0)video.currentTime=Math.min(session.position,Number.isFinite(video.duration)?video.duration:session.position);video.play().catch(()=>{});},{once:true});
     video.addEventListener('timeupdate',()=>{if(!video.paused&&Date.now()-lastSave>=15000)void save(false,video);});
     video.addEventListener('pause',()=>void save(false,video));video.addEventListener('ended',()=>void save(true,video));video.addEventListener('error',()=>{if(player===video)void diagnose();});
