@@ -19,23 +19,25 @@ async function bootstrap(env) {
   verified.add(env.DB);
 }
 async function stream(request,env,source,user,videoId) {
-  const v=await video(env,user,videoId), object=await ensureCurrent(env,source,v);
-  const headers=new Headers({'Content-Type':mime(v.filename),'Accept-Ranges':'bytes','ETag':object.etag,'Last-Modified':new Date(object.modified).toUTCString()});
-  const matches = (value,weak=false) => value?.split(',').map(s=>weak?s.trim().replace(/^W\//,''):s.trim()).some(s=>s==='*'||s===object.etag);
+  const v=await video(env,user,videoId);
+  if(!v.available)fail(410,'unavailable');
+  // No HEAD before the GET: the ranged GET carries If-Match, so a replaced original still fails closed with one fewer R2 round trip per range request.
+  // Cached privately for an hour so rewinds and re-opens reuse fetched ranges; Vary: Cookie keeps entries per signed-in account and ETag revalidates after expiry.
+  const headers=new Headers({'Content-Type':mime(v.filename),'Accept-Ranges':'bytes','ETag':v.etag,'Last-Modified':new Date(v.modified).toUTCString(),'Cache-Control':'private, max-age=3600'});
+  const matches = (value,weak=false) => value?.split(',').map(s=>weak?s.trim().replace(/^W\//,''):s.trim()).some(s=>s==='*'||s===v.etag);
   if(request.headers.has('If-Match') && !matches(request.headers.get('If-Match'))) return new Response(null,{status:412,headers});
-  if(!request.headers.has('If-Match') && Date.parse(request.headers.get('If-Unmodified-Since'))<Date.parse(object.modified)) return new Response(null,{status:412,headers});
-  if(matches(request.headers.get('If-None-Match'),true) || (!request.headers.has('If-None-Match') && Date.parse(request.headers.get('If-Modified-Since'))>=Date.parse(object.modified))) return new Response(null,{status:304,headers});
+  if(!request.headers.has('If-Match') && Date.parse(request.headers.get('If-Unmodified-Since'))<Date.parse(v.modified)) return new Response(null,{status:412,headers});
+  if(matches(request.headers.get('If-None-Match'),true) || (!request.headers.has('If-None-Match') && Date.parse(request.headers.get('If-Modified-Since'))>=Date.parse(v.modified))) return new Response(null,{status:304,headers});
   const ifRange=request.headers.get('If-Range');
-  const allowRange=!ifRange || ifRange===object.etag || (!ifRange.startsWith('W/') && Date.parse(ifRange)>=Date.parse(object.modified));
+  const allowRange=!ifRange || ifRange===v.etag || (!ifRange.startsWith('W/') && Date.parse(ifRange)>=Date.parse(v.modified));
   let range;
   try {range=byteRange(allowRange?request.headers.get('Range'):null,v.bytes);}
   catch(error) {headers.set('Content-Range',`bytes */${v.bytes}`);return new Response(null,{status:416,headers});}
   headers.set('Content-Length',String(range?range.end-range.start+1:v.bytes));
   if(range) headers.set('Content-Range',`bytes ${range.start}-${range.end}/${v.bytes}`);
   if(request.method==='HEAD') return new Response(null,{status:range?206:200,headers});
-  const upstream=await source.open(v.object_key,range,object.etag,request.signal);
-  if(upstream.status===412) {await upstream.body?.cancel();await run(env.DB,'UPDATE videos SET refresh_requested=1 WHERE id=?',v.id);fail(409,'source_changed');}
-  if(upstream.status===404) {await upstream.body?.cancel();fail(410,'unavailable');}
+  const upstream=await source.open(v.object_key,range,v.etag,request.signal);
+  if([412,404].includes(upstream.status)) {await upstream.body?.cancel();await run(env.DB,'UPDATE videos SET refresh_requested=1 WHERE id=?',v.id);fail(upstream.status===412?409:410,upstream.status===412?'source_changed':'unavailable');}
   if(upstream.status!==(range?206:200) || Number(upstream.headers.get('Content-Length'))!==Number(headers.get('Content-Length')) || (range && upstream.headers.get('Content-Range')!==headers.get('Content-Range'))) {
     await upstream.body?.cancel();fail(502,'invalid_storage_response');
   }
