@@ -47,11 +47,14 @@ async function admin(request,env,user,path) {
   owner(user);
   if(path==='/api/admin' && request.method==='GET') {
     const [libs,users,grants,scans,failures,processor]=await Promise.all([
-      all(env.DB,`SELECT l.*,(SELECT count(*) FROM videos v WHERE v.library_id=l.id) AS discovered,
-        (SELECT count(*) FROM videos v WHERE v.library_id=l.id AND v.enrichment='ready' AND v.available=1) AS enriched,
-        (SELECT count(*) FROM videos v WHERE v.library_id=l.id AND v.enrichment='pending' AND v.available=1) AS pending,
-        (SELECT count(*) FROM videos v WHERE v.library_id=l.id AND v.enrichment='failed' AND v.available=1) AS failed,
-        (SELECT count(*) FROM videos v WHERE v.library_id=l.id AND v.available=0) AS missing FROM libraries l ORDER BY l.name`),
+      all(env.DB,`SELECT l.*,COALESCE(c.discovered,0) AS discovered,COALESCE(c.enriched,0) AS enriched,
+        COALESCE(c.pending,0) AS pending,COALESCE(c.failed,0) AS failed,COALESCE(c.missing,0) AS missing
+        FROM libraries l LEFT JOIN (SELECT library_id,count(*) AS discovered,
+          count(*) FILTER (WHERE enrichment='ready' AND available=1) AS enriched,
+          count(*) FILTER (WHERE enrichment='pending' AND available=1) AS pending,
+          count(*) FILTER (WHERE enrichment='failed' AND available=1) AS failed,
+          count(*) FILTER (WHERE available=0) AS missing FROM videos GROUP BY library_id) c ON c.library_id=l.id
+        ORDER BY l.name`),
       all(env.DB,'SELECT id,email,role,enabled,subject IS NOT NULL AS linked FROM users ORDER BY role,email'),
       all(env.DB,'SELECT * FROM grants'),
       all(env.DB,'SELECT id,library_id,status,discovered,ignored,started_at,updated_at,completed_at,error FROM scans ORDER BY started_at DESC LIMIT 50'),

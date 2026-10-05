@@ -5,6 +5,7 @@ import math
 import os
 import resource
 import signal
+import socketserver
 import subprocess
 import sys
 import tempfile
@@ -77,6 +78,11 @@ def bounds(value, size):
 
 class SourceProxy(http.server.ThreadingHTTPServer):
     daemon_threads = True
+
+    def server_bind(self):
+        socketserver.TCPServer.server_bind(self)
+        # The source proxy binds a literal loopback address; reverse DNS can consume the whole job budget.
+        self.server_name, self.server_port = self.server_address[:2]
 
     def __init__(self, api, job, stopped):
         self.api, self.job, self.stopped = api, job, stopped

@@ -11,6 +11,16 @@ from unittest.mock import patch, MagicMock
 import main
 
 class ProcessorCheck(unittest.TestCase):
+    def test_loopback_proxy_starts_without_hostname_lookup(self):
+        with patch.object(main.http.server.socket,'getfqdn',side_effect=AssertionError('hostname lookup')):
+            proxy=main.SourceProxy(None,{},threading.Event())
+        try:
+            self.assertEqual(proxy.server_address[0],'127.0.0.1')
+            self.assertEqual(proxy.server_name,'127.0.0.1')
+            self.assertGreater(proxy.server_port,0)
+        finally:
+            proxy.server_close()
+
     def test_machine_requests_identify_processor_and_keep_authentication(self):
         response=MagicMock()
         response.__enter__.return_value=response

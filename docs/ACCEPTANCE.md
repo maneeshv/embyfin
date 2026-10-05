@@ -6,6 +6,8 @@ Keep installation-specific results, sample identifiers, measured usage, resource
 
 - Run `npm test`, `npm run check`, and `npm run build`.
 - Run Terraform formatting, validation and mocked plan tests.
+- Confirm Settings counts available enrichment states separately from missing videos and reports zero counts for empty libraries.
+- Confirm the processor loopback proxy starts without hostname resolution and still passes the real FFmpeg round trip.
 - Confirm Folders opens at all authorized libraries, library navigation retains breadcrumbs, global search respects grants, and switching libraries resets the previous folder.
 - Confirm a second visit to a library page reuses cached posters (no poster requests in the Worker tail), a signed-out or different account cannot reuse them, and hidden-tab return revalidates the session without reloading the page.
 - Check source replacement, exact-key handling, byte ranges, expired playback/run leases and disabled-user denial.

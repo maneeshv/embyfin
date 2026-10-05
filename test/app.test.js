@@ -68,6 +68,23 @@ test('non-overlap, root-library conflict, and source freeze are database invaria
   await run(env.DB,"UPDATE libraries SET name='Renamed' WHERE id='family'");
   assert.equal((await one(env.DB,"SELECT name FROM libraries WHERE id='family'")).name,'Renamed');
 });
+test('settings catalog counts include missing and empty libraries correctly',async()=>{
+  const {env}=await fixture();
+  await run(env.DB,"UPDATE videos SET enrichment='ready' WHERE object_key='family/旅行 #50%_STRASSE.MP4'");
+  await run(env.DB,"UPDATE videos SET enrichment='failed',available=0 WHERE object_key='family/nested/straße.mp4'");
+  await run(env.DB,"INSERT INTO libraries(id,source_id,name,prefix,created_at,next_scan) VALUES('empty','r2','Empty','empty/',?,0)",now());
+  const response=await request(env,'owner','/api/admin');assert.equal(response.status,200);
+  const {libraries}=await response.json(),counts=libraries.map(({id,discovered,enriched,pending,failed,missing})=>({id,discovered,enriched,pending,failed,missing}));
+  assert.deepEqual(counts,[
+    {id:'empty',discovered:0,enriched:0,pending:0,failed:0,missing:0},
+    {id:'family',discovered:2,enriched:1,pending:0,failed:0,missing:1},
+    {id:'private',discovered:1,enriched:0,pending:1,failed:0,missing:0},
+  ]);
+  await run(env.DB,"UPDATE videos SET enrichment='failed' WHERE library_id='private'");
+  const updated=await (await request(env,'owner','/api/admin')).json();
+  const privateLibrary=updated.libraries.find(l=>l.id==='private');
+  assert.deepEqual([privateLibrary.pending,privateLibrary.failed],[0,1]);
+});
 test('multi-page and short non-final scans resume with no browser and unchanged scans do not re-enqueue',async()=>{
   const {env,source,v}=await fixture();let calls=0;
   const o=object('family/new.mp4');source.list=async(prefix,cursor)=>{calls++;return cursor?{objects:[o],cursor:null}:{objects:[o],cursor:'next'};};
