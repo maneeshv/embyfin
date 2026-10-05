@@ -50,19 +50,34 @@ When entering the dashboard path, use `machine/*` and verify the destination has
 | `SOURCE_SECRET_ACCESS_KEY` | Matching Object Read only secret |
 | `CF_API_TOKEN` | Account D1 Edit token for consistent SQL export |
 | `MACHINE_SECRET` | Cryptographically random secret of at least 32 bytes |
+| `PROVIDER_ENCRYPTION_KEY` | Base64 encoding of 32 random bytes; required to save provider credentials in Settings |
+| `TMDB_READ_TOKEN` | Optional deployment fallback for TMDB identification, artwork and cast; prefer owner Settings |
+| `OPENSUBTITLES_API_KEY` | Optional deployment fallback for OpenSubtitles; prefer owner Settings |
+| `OPENSUBTITLES_USERNAME` | Optional deployment fallback username; pair with its password for automatic login and renewal |
+| `OPENSUBTITLES_PASSWORD` | Matching deployment fallback password |
+| `OPENSUBTITLES_TOKEN` | Legacy deployment fallback bearer token, used only when no account pair is configured; renew manually when expired |
 
 Create source credentials through R2's API-token management. Restrict them to the source bucket and Object Read only. Inspect the policy; successful reads alone do not prove write authority is absent. Create a separate export token with D1 Edit on the intended account; that authority may affect other databases in the account.
 
 Terraform operator credentials and Wrangler's OAuth login are separate from runtime secrets. Store scopes, expiry and recreation notes privately. An authenticated Wrangler session does not necessarily have token-creation authority.
 
+Media metadata setup requires numbered migrations through `0004_tv.sql`. Existing libraries retain their type; select Movies or TV shows in Settings to enable background identification. See [Movies and subtitles](MOVIES.md) and [TV shows and episodes](TV.md) for provider setup, privacy and limits. Before using the provider credential form, generate a 32-byte key and encode it as base64, for example with `python3 -c 'import base64,secrets; print(base64.b64encode(secrets.token_bytes(32)).decode())'`. Add that value as the `PROVIDER_ENCRYPTION_KEY` **Secret** under Workers & Pages → the application Worker → Settings → Variables and Secrets, then deploy. Retain the same key in the operator vault and do not rotate or replace it casually: the Worker needs it to decrypt saved credentials. Provider credentials are entered in owner Settings and encrypted in the existing MediaController Durable Object's private storage, separate from D1 and R2. Deployment secrets listed above remain supported as fallback values; saved Settings take precedence, while Disconnect disables the fallback. Routine provider changes do not require Cloudflare access. `OPENSUBTITLES_USER_AGENT` can be set to the application identity registered with the provider; the default is `Embyfin v0.1.0`.
+
+For automatic subtitle-token renewal, save the OpenSubtitles API key, username and password in owner Settings. A complete account pair is required for automatic login; a legacy token is supported only through deployment fallback. The Worker renews a shared session on demand before expiry or after one provider `401`, without a new D1 migration or infrastructure change. Cached tokens live in the existing MediaController Durable Object's private storage, not SQL exports. Invalid-login `401`/`403` responses suspend login until credentials change; transient errors back off. Never print credentials or login responses in diagnostics.
+
+Provider credentials saved in Settings are not included in D1 exports or this repository's context/recovery archives. Keep the encryption key and a way to re-enter the provider credentials in the operator vault. If the Durable Object state is lost, restore the original encryption key and state where available, or use Settings to disconnect and enter credentials again. A missing or incorrect key makes saved credentials unavailable; restore the original key or disconnect and re-enter them.
+
 For a new local secret file only:
 
 ```sh
 python3 - <<'PY'
-import os, secrets
+import base64, os, secrets
 from pathlib import Path
 with os.fdopen(os.open('.dev.vars', os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), 'w') as output:
-    output.write(Path('.dev.vars.example').read_text().replace('MACHINE_SECRET=', 'MACHINE_SECRET=' + secrets.token_hex(32), 1))
+    template = Path('.dev.vars.example').read_text()
+    template = template.replace('MACHINE_SECRET=', 'MACHINE_SECRET=' + secrets.token_hex(32), 1)
+    template = template.replace('PROVIDER_ENCRYPTION_KEY=', 'PROVIDER_ENCRYPTION_KEY=' + base64.b64encode(secrets.token_bytes(32)).decode(), 1)
+    output.write(template)
 PY
 ```
 
@@ -146,6 +161,8 @@ After the sample, deploy the ordinary production settings with `PROCESSING_ENABL
 | Access login works but API returns 401 | Match issuer/team and the main application's AUD; verify owner login and HTTPOnly cookie settings. |
 | Admitted user receives 403 or an empty library | Check enabled app identity and library grants separately from Access admission. Restored subjects may need deliberate identity reconciliation. |
 | No videos after deployment | Check each library's explicit first scan, pause state, source credentials, scan errors and scheduled invocations. Creating a library alone does not start it. |
+| Provider settings cannot be saved or decrypted | Check that `PROVIDER_ENCRYPTION_KEY` is present and matches the key used when credentials were saved. Restore the original key from the operator vault; if it is unavailable, disconnect the provider and enter credentials again. |
+| Subtitle login fails or stops renewing | Test the saved OpenSubtitles connection in owner Settings and correct the API key or account credentials. Invalid credentials are not retried until they change. A legacy deployment token alone still needs manual renewal. Quota limits and temporary provider failures do not imply a bad password. |
 | Videos have placeholders / pending metadata | Expected with `PROCESSING_ENABLED=false`. A completed inventory does not imply FFmpeg jobs ran. |
 | Processor exits before claiming, with `network` | Check `machine_request_failed` HTTP status and `machine_connection_failed` diagnostics. Python's default `Python-urllib/3.12` user agent received HTTP 403 from the edge; the explicit `Embyfin-Processor/0.1` identity reaches application authentication. Keep this identity on machine callbacks; no Access/WAF policy change is needed for that fix. |
 | Docker build/push hangs in `docker-credential-desktop` | Inspect only the project build's helper processes. An isolated mode-0700 `DOCKER_CONFIG` directory with a mode-0600 config avoids the hanging Desktop credential helper. Use the existing daemon endpoint and remove its temporary registry credentials after upload. Preserve the ordinary Docker configuration. |

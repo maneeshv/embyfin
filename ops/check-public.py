@@ -13,8 +13,13 @@ def findings(data, identifiers=()):
     problems = []
     if re.search(r'AGE-SECRET-KEY-[A-Z0-9]{50,}|-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----', text):
         problems.append('private key')
-    if re.search(r'(?im)^\s*(?:export\s+)?(?:AWS_SECRET_ACCESS_KEY|CLOUDFLARE_API_TOKEN|SOURCE_SECRET_ACCESS_KEY|MACHINE_SECRET)\s*=\s*[\"\']?[a-zA-Z0-9_/-]{24,}', text):
+    if re.search(r'(?im)^\s*(?:export\s+)?(?:AWS_SECRET_ACCESS_KEY|CLOUDFLARE_API_TOKEN|SOURCE_SECRET_ACCESS_KEY|MACHINE_SECRET|TMDB_READ_TOKEN|OPENSUBTITLES_API_KEY|OPENSUBTITLES_TOKEN)\s*=\s*[\"\']?[a-zA-Z0-9_/-]{24,}', text):
         problems.append('credential assignment')
+    for match in re.finditer(r'''(?m)(?:^|[{,])[ \t]*(?:export[ \t]+)?["']?(?:OPENSUBTITLES_(?:USERNAME|PASSWORD)|PROVIDER_ENCRYPTION_KEY)["']?[ \t]*[:=][ \t]*("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|[^\s,;}#]+)''', text):
+        value = match[1][1:-1] if match[1][0] in '\"\'' else match[1]
+        if value and not re.fullmatch(r'<[^>]+>|YOUR_[A-Z_]+|\$\{?[A-Z_][A-Z0-9_]*\}?|(?:process\.)?env\.[A-Z_][A-Z0-9_]*', value):
+            problems.append('credential assignment')
+            break
     for match in re.finditer(r'(?i)(?:account_id|CF_ACCOUNT_ID)[\"\']?\s*[:=]\s*[\"\']([a-f0-9]{32})', text):
         if set(match[1]) != {'0'}:
             problems.append('production account in configuration')

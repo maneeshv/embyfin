@@ -6,5 +6,7 @@
   "assets": {"directory": "./public", "binding": "ASSETS", "run_worker_first": true},
   "d1_databases": [{"binding": "DB", "database_name": "embyfin", "database_id": "local", "migrations_dir": "migrations"}],
   "r2_buckets": [{"binding": "POSTERS", "bucket_name": "embyfin-posters"}, {"binding": "BACKUPS", "bucket_name": "embyfin-backups"}],
+  "durable_objects": {"bindings": [{"name": "PROCESSOR", "class_name": "LocalMediaController"}]},
+  "migrations": [{"tag": "v1", "new_sqlite_classes": ["LocalMediaController"]}],
   "vars": {"APP_ORIGIN": "http://localhost:8787", "OWNER_EMAIL": "owner@localhost", "SOURCE_BUCKET": "local-fixtures", "SOURCE_SCOPE": "", "MAINTENANCE": "false"}
 }

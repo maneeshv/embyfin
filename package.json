@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "imports": {"#src/*": "./src/*"},
   "scripts": {
     "dev": "wrangler dev --config wrangler.local.jsonc",
     "db:migrate": "wrangler d1 migrations apply embyfin --local --config wrangler.local.jsonc",

@@ -6,6 +6,10 @@ import {scanStep} from './scans.js';
 import {expireJobs,processingSample} from './jobs.js';
 import {machineToken} from './auth.js';
 import {backupTick, maintenance} from './backup.js';
+import {enrichMovies} from '#src/movies.js';
+import {enrichEpisodes} from '#src/tv.js';
+import {SubtitleSession} from '#src/subtitle-auth.js';
+import {ProviderSettings} from '#src/providers.js';
 
 export interface Env {
   DB:D1Database; POSTERS:R2Bucket; BACKUPS:R2Bucket; ASSETS:Fetcher;
@@ -19,6 +23,11 @@ export class MediaController extends Container<Env> {
   sleepAfter='60s';
   private ticking?:Promise<void>;
   private controls:Promise<unknown>=Promise.resolve();
+  private subtitleAuth=new SubtitleSession(this.env,this.ctx.storage);
+  private providers=new ProviderSettings(this.env,this.ctx.storage,this.subtitleAuth);
+  async providerConfiguration() {return this.providers.configuration();}
+  async updateProvider(data:unknown) {return this.providers.update(data);}
+  async subtitleSession(rejectedToken='',credentials?:Record<string,string>) {return this.subtitleAuth.get(rejectedToken,credentials ?? (await this.providers.configuration()).credentials);}
   private control<T>(task:()=>Promise<T>):Promise<T> {
     const next=this.controls.then(task,task);
     this.controls=next.catch(()=>{});
@@ -81,6 +90,9 @@ export class MediaController extends Container<Env> {
       await expireJobs(this.env);
       await run(this.env.DB,'UPDATE libraries SET next_scan=0 WHERE paused=0 AND EXISTS(SELECT 1 FROM videos v WHERE v.library_id=libraries.id AND v.refresh_requested=1)');
       if (this.env.SOURCE_ACCESS_KEY_ID) await scanStep(this.env,new R2Source(this.env));
+      const metadataEnv={...this.env,...(await this.providers.configuration()).credentials};
+      await enrichMovies(metadataEnv);
+      await enrichEpisodes(metadataEnv);
       if (this.env.PROCESSING_ENABLED!=='true') return;
       const sample=processingSample(this.env);
       if (sample.until<=now()) return;

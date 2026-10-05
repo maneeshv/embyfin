@@ -15,7 +15,7 @@ export function configFromPlan(plan) {
   if (/example\.(com|org|net)|REPLACE_|YOUR-|your-team/.test(JSON.stringify(config))) throw Error('Replace deployment placeholders');
   if (v.CF_ACCOUNT_ID !== config.account_id || v.CF_DATABASE_ID !== config.d1_databases?.[0]?.database_id || v.APP_ORIGIN !== `https://${config.routes?.[0]?.pattern}`) throw Error('Inconsistent deployment bindings');
   if (config.workers_dev !== false || config.preview_urls !== false || config.assets?.run_worker_first !== true) throw Error('Private deployment protections are missing');
-  for (const key of ['MACHINE_SECRET', 'CF_API_TOKEN', 'SOURCE_ACCESS_KEY_ID', 'SOURCE_SECRET_ACCESS_KEY']) if (key in v) throw Error('Runtime secrets must not appear in generated vars');
+  for (const key of ['MACHINE_SECRET', 'CF_API_TOKEN', 'SOURCE_ACCESS_KEY_ID', 'SOURCE_SECRET_ACCESS_KEY', 'TMDB_READ_TOKEN', 'OPENSUBTITLES_API_KEY', 'OPENSUBTITLES_TOKEN', 'OPENSUBTITLES_USERNAME', 'OPENSUBTITLES_PASSWORD', 'PROVIDER_ENCRYPTION_KEY']) if (key in v) throw Error('Runtime secrets must not appear in generated vars');
   return config;
 }
 
