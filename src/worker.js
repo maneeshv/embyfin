@@ -5,6 +5,13 @@ import {catalog,libraries,folders,video,publicVideo,ensureCurrent,personal} from
 import {scanIntent} from './scans.js';
 import {machine,retryFailed} from './jobs.js';
 import {backupState,gate,requestBackup} from './backup.js';
+import {movieFeatures,searchMovies,identifyMovie,movieDetails,personDetails,movieImage} from '#src/movies.js';
+import {subtitleStatus,listSubtitles,searchSubtitles,importSubtitle,subtitleContent} from '#src/subtitles.js';
+import {searchShows,identifyEpisode,episodeDetails,showCatalog,showDetails,episodeImage} from '#src/tv.js';
+
+import {providerConfiguration,providerEnvironment,updateProvider} from '#src/providers.js';
+
+const features=env=>({...movieFeatures(env),subtitles:!!subtitleStatus(env).configured});
 
 const verified=new WeakSet();
 async function bootstrap(env) {
@@ -46,6 +53,8 @@ async function stream(request,env,source,user,videoId) {
 async function admin(request,env,user,path) {
   owner(user);
   if(path==='/api/admin' && request.method==='GET') {
+    const providerState=await providerConfiguration(env);
+    env={...env,...providerState.credentials};
     const [libs,users,grants,scans,failures,processor]=await Promise.all([
       all(env.DB,`SELECT l.*,(SELECT count(*) FROM videos v WHERE v.library_id=l.id) AS discovered,
         (SELECT count(*) FROM videos v WHERE v.library_id=l.id AND v.enrichment='ready' AND v.available=1) AS enriched,
@@ -62,17 +71,19 @@ async function admin(request,env,user,path) {
     ]);
     return json({libraries:libs,users,grants,scans,failures,processor,backup:await backupState(env),
       source:{bucket:env.SOURCE_BUCKET,scope:env.SOURCE_SCOPE || '',configured:!!env.SOURCE_ACCESS_KEY_ID},
-      processingEnabled:env.PROCESSING_ENABLED==='true',backupConfigured:!!env.CF_API_TOKEN});
+      processingEnabled:env.PROCESSING_ENABLED==='true',backupConfigured:!!env.CF_API_TOKEN,features:features(env),providers:providerState.providers});
   }
   if(request.method!=='POST') fail(405,'method_not_allowed');
   const data=await body(request);
+  if(path==='/api/admin/providers')return json(await updateProvider(env,data));
   if(path==='/api/admin/libraries') {
     const scope=prefix(data.prefix,env.SOURCE_SCOPE || ''), name=string(data.name,100);
+    if(data.kind!==undefined&&!['videos','movies','tv'].includes(data.kind))fail(400,'invalid_library_kind');
     if(data.id) {
       const l=await one(env.DB,'SELECT * FROM libraries WHERE id=?',string(data.id,100));if(!l)fail(404,'not_found');
       if(l.frozen && l.prefix!==scope) fail(409,'scope_frozen');
-      await run(env.DB,'UPDATE libraries SET name=?,prefix=?,enabled=? WHERE id=?',name,scope,boolean(data.enabled ?? true),l.id);
-    } else await run(env.DB,"INSERT INTO libraries(id,source_id,name,prefix,created_at,next_scan) VALUES(?,'r2',?,?,?,?)",id(),name,scope,now(),2147483647);
+      await run(env.DB,'UPDATE libraries SET name=?,prefix=?,enabled=?,kind=? WHERE id=?',name,scope,boolean(data.enabled ?? true),data.kind??l.kind,l.id);
+    } else await run(env.DB,"INSERT INTO libraries(id,source_id,name,prefix,created_at,next_scan,kind) VALUES(?,'r2',?,?,?,?,?)",id(),name,scope,now(),2147483647,data.kind??'videos');
     return json({ok:true});
   }
   if(path==='/api/admin/users') {
@@ -113,11 +124,42 @@ export async function handle(request,env,ctx,authenticate=identity) {
     const user=await resolveUser(env,claim);
     if(!['GET','HEAD'].includes(request.method))csrf(request,env,user);
     let result;
-    if(path==='/api/session' && request.method==='GET') result=json({user,local:authenticate!==identity,logout:'/cdn-cgi/access/logout'});
+    if(path==='/api/session' && request.method==='GET') result=json({user,local:authenticate!==identity,logout:'/cdn-cgi/access/logout',features:features(await providerEnvironment(env))});
     else if(path.startsWith('/api/admin'))result=await admin(request,env,user,path);
     else if(path==='/api/libraries' && request.method==='GET')result=json({items:await libraries(env,user)});
     else if(path==='/api/videos' && request.method==='GET')result=json(await catalog(env,user,new URL(request.url).searchParams));
     else if(path==='/api/folders' && request.method==='GET')result=json(await folders(env,user,new URL(request.url).searchParams));
+    else if(path==='/api/shows'&&request.method==='GET')result=json(await showCatalog(env,user,new URL(request.url).searchParams));
+    else if(/^\/api\/shows\/[^/]+$/.test(path)&&request.method==='GET')result=json(await showDetails(env,user,path.split('/').pop(),new URL(request.url).searchParams));
+    else if(/^\/api\/people\/[^/]+$/.test(path)&&request.method==='GET')result=json(await personDetails(env,user,path.split('/').pop(),new URL(request.url).searchParams));
+    else if(/^\/api\/videos\/[^/]+\/(movie(?:\/search)?|episode(?:\/search)?|(?:tv-)?artwork\/[^/]+|subtitles(?:\/[^/]+)?)$/.test(path)) {
+      const [,videoId,action,detail]=/^\/api\/videos\/([^/]+)\/([^/]+)(?:\/([^/]+))?$/.exec(path);
+      // Check the video before provider availability or owner status, so guessed IDs disclose nothing.
+      await video(env,user,videoId);
+      if(['movie','episode'].includes(action) || (action==='subtitles' && (!detail || detail==='search')))env=await providerEnvironment(env);
+      const params=new URL(request.url).searchParams;
+      if(action==='movie'&&detail==='search'&&request.method==='GET') {
+        owner(user);result=json({items:await searchMovies(env,params.get('q'),params.get('year')||undefined)});
+      } else if(action==='movie'&&!detail&&request.method==='GET')result=json(await movieDetails(env,user,videoId));
+      else if(action==='movie'&&!detail&&request.method==='POST') {owner(user);result=json(await identifyMovie(env,user,videoId,await body(request)));}
+      else if(action==='episode'&&detail==='search'&&request.method==='GET'){owner(user);result=json({items:await searchShows(env,params.get('q'),params.get('year')||undefined)});}
+      else if(action==='episode'&&!detail&&request.method==='GET')result=json(await episodeDetails(env,user,videoId));
+      else if(action==='episode'&&!detail&&request.method==='POST'){owner(user);result=json(await identifyEpisode(env,user,videoId,await body(request)));}
+      else if(action==='tv-artwork'&&['GET','HEAD'].includes(request.method)){
+        const artwork=await episodeImage(env,user,videoId,detail,params.get('person'));
+        result=request.method==='HEAD'?new Response(null,artwork):artwork;
+      }
+      else if(action==='artwork'&&['GET','HEAD'].includes(request.method)) {
+        const artwork=await movieImage(env,user,videoId,detail,params.get('person'));
+        result=request.method==='HEAD'?new Response(null,artwork):artwork;
+      } else if(action==='subtitles'&&!detail&&request.method==='GET')result=json({...await listSubtitles(env,user,videoId),configured:features(env).subtitles});
+      else if(action==='subtitles'&&!detail&&request.method==='POST')result=json(await importSubtitle(env,user,videoId,await body(request)));
+      else if(action==='subtitles'&&detail==='search'&&request.method==='GET')result=json(await searchSubtitles(env,user,videoId,params));
+      else if(action==='subtitles'&&detail&&['GET','HEAD'].includes(request.method)) {
+        const subtitle=await subtitleContent(env,user,videoId,detail);
+        result=request.method==='HEAD'?new Response(null,subtitle):subtitle;
+      } else fail(405,'method_not_allowed');
+    }
     else if(path.startsWith('/api/videos/')) {
       const match=/^\/api\/videos\/([^/]+)(?:\/(media|poster|availability|session|progress|favorite|watched))?$/.exec(path);
       if(!match)fail(404,'not_found');
@@ -139,7 +181,7 @@ export async function handle(request,env,ctx,authenticate=identity) {
       }
     } else if(path.startsWith('/api/'))fail(404,'not_found');
     else if(['GET','HEAD'].includes(request.method)) {
-      if(!['/','/index.html','/app.js','/style.css','/favicon.svg','/recovery.html'].includes(path))fail(404,'not_found');
+      if(!['/','/index.html','/app.js','/style.css','/favicon.svg','/tmdb-logo.svg','/recovery.html'].includes(path))fail(404,'not_found');
       const asset=await env.ASSETS.fetch(request);
       result=new Response(asset.body,asset);result.headers.set('Cache-Control','private, no-cache');
     } else fail(405,'method_not_allowed');

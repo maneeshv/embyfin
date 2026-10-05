@@ -43,7 +43,8 @@ class ProcessorCheck(unittest.TestCase):
         details = main.technical({'streams': [{'codec_type':'video','width':1920,'height':1080,'side_data_list':[{'rotation':90}]}]})
         self.assertIsNone(details['duration'])
         self.assertEqual((details['width'], details['height']), (1080, 1920))
-        with tempfile.TemporaryDirectory() as folder:
+        # HTTPServer resolves its loopback name on construction; tests must not depend on host DNS.
+        with tempfile.TemporaryDirectory() as folder, patch('socket.getfqdn', return_value='localhost'):
             fixture = Path(folder) / 'fixture.mp4'
             subprocess.run(['ffmpeg','-v','error','-f','lavfi','-i','testsrc2=size=320x180:rate=24','-f','lavfi','-i','sine=frequency=440',
                             '-t','2','-c:v','libx264','-threads','1','-c:a','aac','-movflags','+faststart',str(fixture)],check=True)

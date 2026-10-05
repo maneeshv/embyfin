@@ -5,3 +5,10 @@ CF_API_TOKEN=
 # Random 32+ bytes. Never passed to a browser or processor.
 MACHINE_SECRET=
 # Local source connection may use a read-only test R2 credential; never commit it.
+# Base64-encoded 32 random bytes; enables encrypted provider setup in Settings.
+PROVIDER_ENCRYPTION_KEY=
+# Optional deployment fallback for movie/TV metadata and subtitle sign-in.
+TMDB_READ_TOKEN=
+OPENSUBTITLES_API_KEY=
+OPENSUBTITLES_USERNAME=
+OPENSUBTITLES_PASSWORD=

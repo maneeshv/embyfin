@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
 import {generateKeyPair,exportJWK,SignJWT} from 'jose';
 import {handle} from '../src/worker.js';
 import {one,all,run,now,byteRange,normalize,revision} from '../src/core.js';
@@ -14,7 +14,7 @@ import {backupTick,backupState,requestBackup} from '../src/backup.js';
 import {createHash} from 'node:crypto';
 
 class D1 {
-  constructor(){this.db=new DatabaseSync(':memory:');this.db.exec(readFileSync(new URL('../migrations/0001_initial.sql',import.meta.url),'utf8'));}
+  constructor(){this.db=new DatabaseSync(':memory:');for(const name of readdirSync(new URL('../migrations/',import.meta.url)).filter(name=>name.endsWith('.sql')).sort())this.db.exec(readFileSync(new URL('../migrations/'+name,import.meta.url),'utf8'));}
   prepare(text){
     const stmt=this.db.prepare(text);let values=[];
     const query={bind(...args){values=args;return query;},async first(){return stmt.get(...values)||null;},async all(){return {results:stmt.all(...values).map(r=>({...r})),meta:{changes:0}};},async run(){const result=stmt.run(...values);return {results:[],meta:{changes:Number(result.changes)}};},text,values:()=>values};return query;
@@ -253,4 +253,102 @@ test('posters cache privately per cookie with a revision-keyed URL and few catal
   const asset=await request(env,'alice','/app.js');assert.equal(asset.headers.get('Cache-Control'),'private, no-cache');
   assert.equal((await request(env,'alice','/api/videos')).headers.get('Cache-Control'),'private, no-store');
   assert.equal((await request(env,'alice','/api/videos?sort=constructor')).status,200);
+});
+
+test('movie and subtitle routes preserve grants, owner controls and CSRF',async()=>{
+  const {env,v}=await fixture();
+  const session=await (await request(env,'alice','/api/session')).json();
+  assert.deepEqual(session.features,{metadata:false,subtitles:false});
+  const configured=await request(env,'owner','/api/admin/libraries',{id:'family',name:'Movies',prefix:'family/',kind:'movies'});
+  assert.equal(configured.status,200);
+  assert.equal((await one(env.DB,"SELECT kind FROM libraries WHERE id='family'")).kind,'movies');
+  await request(env,'owner','/api/admin/libraries',{id:'family',name:'Movies',prefix:'family/',enabled:true});
+  assert.equal((await one(env.DB,"SELECT kind FROM libraries WHERE id='family'")).kind,'movies');
+  assert.equal((await request(env,'owner','/api/admin/libraries',{id:'family',name:'Movies',prefix:'family/',kind:'music'})).status,400);
+  const base=`/api/videos/${v.id}`;
+  for(const suffix of ['/movie','/movie/search?q=Example','/artwork/poster','/subtitles','/subtitles/search?q=Example&language=en','/subtitles/missing']){
+    assert.equal((await request(env,'bob',base+suffix)).status,404,suffix);
+  }
+  assert.equal((await request(env,'alice',base+'/movie', {tmdbId:11,revision:v.revision})).status,403);
+  assert.equal((await request(env,'alice',base+'/movie/search?q=Example')).status,403);
+  assert.equal((await request(env,'owner',base+'/movie/search?q=Example')).status,503);
+  const subtitles=await (await request(env,'alice',base+'/subtitles')).json();
+  assert.deepEqual(subtitles.items,[]);assert.equal(subtitles.configured,false);
+  assert.equal((await request(env,'alice',base+'/subtitles',{fileId:1,revision:v.revision},{Origin:'https://other.test'})).status,403);
+  assert.equal((await request(env,'alice','/api/people/1')).status,404);
+  assert.equal((await request(env,'alice','/api/people/nope')).status,400);
+});
+
+test('movie details, actor navigation and imported WebVTT work through authenticated HTTP routes',async()=>{
+  const {env,v}=await fixture(),original=globalThis.fetch;
+  Object.assign(env,{TMDB_READ_TOKEN:'synthetic',OPENSUBTITLES_API_KEY:'synthetic',OPENSUBTITLES_TOKEN:'synthetic'});
+  globalThis.fetch=async input=>{
+    const url=new URL(String(input));
+    if(url.hostname==='api.themoviedb.org')return Response.json({id:42,title:'Example Movie',release_date:'2020-01-01',poster_path:'/example.jpg',credits:{cast:[{id:8,name:'Example Actor',character:'The Explorer'}]}});
+    if(url.hostname==='image.tmdb.org')return new Response(new Uint8Array([255,216,255,217]),{headers:{'Content-Type':'image/jpeg'}});
+    if(url.pathname.endsWith('/download'))return Response.json({link:'https://www.opensubtitles.com/download/example'});
+    return new Response('1\n00:00:01,000 --> 00:00:02,000\nHello');
+  };
+  try {
+    const matched=await request(env,'owner',`/api/videos/${v.id}/movie`,{tmdbId:42,revision:v.revision});
+    assert.equal(matched.status,200);
+    const detail=await matched.json();assert.equal(detail.movie.title,'Example Movie');assert.equal(detail.cast[0].character,'The Explorer');
+    assert.equal((await (await request(env,'alice','/api/videos?type=movies&q=Example')).json()).total,1);
+    const actor=await (await request(env,'alice','/api/people/8')).json();assert.equal(actor.person.name,'Example Actor');assert.equal(actor.items[0].id,v.id);
+    assert.equal((await request(env,'bob','/api/people/8')).status,404);
+    const image=await request(env,'alice',detail.movie.poster);assert.equal(image.status,200);assert.match(image.headers.get('Content-Security-Policy'),/img-src 'self'/);
+    const imported=await request(env,'alice',`/api/videos/${v.id}/subtitles`,{fileId:3,language:'en',label:'English',revision:v.revision});
+    assert.equal(imported.status,200);const track=await imported.json();
+    const subtitle=await request(env,'alice',track.url);assert.equal(subtitle.status,200);assert.match(subtitle.headers.get('Content-Type'),/^text\/vtt/);assert.match(await subtitle.text(),/^WEBVTT/);
+    assert.equal((await request(env,'bob',track.url)).status,404);
+    await run(env.DB,'UPDATE videos SET revision=? WHERE id=?','replacement',v.id);
+    assert.equal((await request(env,'alice',track.url)).status,404);
+    assert.equal((await request(env,'alice',detail.movie.poster)).status,404);
+  } finally {globalThis.fetch=original;}
+});
+
+test('TV routes group authorized episodes by show and season with next-episode navigation',async()=>{
+  const {env,v}=await fixture(),original=globalThis.fetch;
+  assert.equal((await request(env,'owner','/api/admin/libraries',{id:'family',name:'TV shows',prefix:'family/',kind:'tv'})).status,200);
+  assert.equal((await (await request(env,'alice','/api/libraries')).json()).items[0].kind,'tv');
+  assert.deepEqual((await (await request(env,'alice','/api/shows')).json()).items,[]);
+  Object.assign(env,{TMDB_READ_TOKEN:'synthetic'});
+  globalThis.fetch=async input=>{
+    const url=new URL(String(input));
+    if(url.hostname==='image.tmdb.org')return new Response(new Uint8Array([255,216,255,217]),{headers:{'Content-Type':'image/jpeg'}});
+    if(url.pathname==='/3/search/tv')return Response.json({results:[{id:50,name:'Example Show',first_air_date:'2020-01-01'}],total_pages:1});
+    if(url.pathname==='/3/tv/50')return Response.json({id:50,name:'Example Show',first_air_date:'2020-01-01',poster_path:'/show.jpg',backdrop_path:'/show-backdrop.jpg',genres:[]});
+    const match=/\/season\/(\d+)\/episode\/(\d+)$/.exec(url.pathname);
+    if(match)return Response.json({id:500+Number(match[1])*10+Number(match[2]),show_id:50,season_number:Number(match[1]),episode_number:Number(match[2]),name:'Episode '+match[1],air_date:'2020-01-01',still_path:'/still.jpg',credits:{cast:[{id:8,name:'Example Actor',character:'The Explorer',profile_path:'/actor.jpg'}]}});
+    return new Response(null,{status:404});
+  };
+  try {
+    const base=`/api/videos/${v.id}/episode`;
+    assert.equal((await request(env,'alice',base,{tmdbId:50,season:1,episode:1,revision:v.revision})).status,403);
+    assert.equal((await request(env,'owner',base,{tmdbId:50,season:1,episode:1,revision:v.revision},{Origin:'https://other.test'})).status,403);
+    assert.equal((await request(env,'bob',base+'/search?q=Example')).status,404);
+    assert.equal((await request(env,'alice',base+'/search?q=Example')).status,403);
+    assert.equal((await request(env,'owner',base+'/search?q=Example')).status,200);
+    const matched=await request(env,'owner',base,{tmdbId:50,season:1,episode:1,revision:v.revision});
+    assert.equal(matched.status,200,await matched.clone().text());
+    const second=await one(env.DB,"SELECT * FROM videos WHERE library_id='family' AND id<>?",v.id);
+    assert.equal((await request(env,'owner',`/api/videos/${second.id}/episode`,{tmdbId:50,season:2,episode:1,revision:second.revision})).status,200);
+    const shows=await (await request(env,'alice','/api/shows')).json();
+    assert.equal(shows.total,1);assert.equal(shows.items[0].episodeCount,2);assert.equal(shows.items[0].seasonCount,2);
+    assert.equal((await (await request(env,'bob','/api/shows')).json()).total,0);
+    assert.equal((await request(env,'bob','/api/shows/50')).status,404);
+    const season=await (await request(env,'alice','/api/shows/50?season=2')).json();
+    assert.equal(season.total,1);assert.equal(season.items[0].id,second.id);assert.equal(season.items[0].episode.seasonNumber,2);
+    const details=await (await request(env,'alice',base)).json();
+    assert.equal(details.next.id,second.id);assert.equal(details.previous,null);
+    assert.equal((await request(env,'alice',shows.items[0].poster)).status,200);
+    assert.equal((await request(env,'bob',shows.items[0].poster)).status,404);
+    const actor=await (await request(env,'alice','/api/people/8')).json();
+    assert.equal(actor.items.length,2);assert(actor.items.every(item=>item.episode.showId===50));
+    assert.equal((await (await request(env,'alice','/api/videos?type=movies')).json()).total,0);
+    assert.equal((await (await request(env,'alice','/api/videos?type=tv&q=Example%20Show')).json()).total,2);
+    await run(env.DB,"DELETE FROM grants WHERE user_id='alice'");
+    assert.equal((await request(env,'alice','/api/shows/50')).status,404);
+    assert.equal((await request(env,'alice',base)).status,404);
+  } finally {globalThis.fetch=original;}
 });

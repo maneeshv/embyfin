@@ -14,6 +14,11 @@ test('deployment generation rejects changes, unknown outputs and unsafe configur
   config.vars.CF_DATABASE_ID = 'wrong-db';
   assert.throws(() => configFromPlan(plan));
   config.vars.CF_DATABASE_ID = 'test-db';
+  for(const key of ['TMDB_READ_TOKEN','OPENSUBTITLES_API_KEY','OPENSUBTITLES_TOKEN','OPENSUBTITLES_USERNAME','OPENSUBTITLES_PASSWORD','PROVIDER_ENCRYPTION_KEY']) {
+    config.vars[key]='must-not-export';
+    assert.throws(()=>configFromPlan(plan));
+    delete config.vars[key];
+  }
   config.vars.MACHINE_SECRET = 'must-not-export';
   assert.throws(() => configFromPlan(plan));
 });

@@ -1,6 +1,6 @@
 # Embyfin
 
-Private video catalog for an existing R2 bucket. Implements the P0 application paths in [PRD.md](PRD.md): a Worker/API and responsive browser UI, D1 catalog and personal state, resumable scans, a bounded FFmpeg Container, and export/recovery tooling. No media is uploaded or moved as part of onboarding.
+Private video, movie and TV catalog for an existing R2 bucket. Includes optional movie/episode identification, artwork, cast browsing and subtitle search alongside the P0 application paths in [PRD.md](PRD.md): a Worker/API and responsive browser UI, D1 catalog and personal state, resumable scans, a bounded FFmpeg Container, and export/recovery tooling. No media is uploaded or moved as part of onboarding.
 
 ## Contributing with coding agents
 
@@ -33,13 +33,14 @@ Use the [Cloudflare deployment runbook](docs/CLOUDFLARE-RUNBOOK.md) and [Terrafo
 
 Production inputs and operational history belong in ignored `.private/` files. [Private deployment context](docs/PRIVATE-CONTEXT.md) explains encrypted R2 backup and recovery. Public examples use synthetic values and do not target a live installation. Generate `wrangler.generated.json` before deployment; never deploy the template directly.
 
-Read-only source requests have no delete/rename/copy path. Exact keys are preserved in D1; keys containing standalone `.` or `..` URL segments remain discoverable but fail with `unsupported_key_path` because URL normalization would otherwise resolve a different key. Changing provider/source configuration after catalog creation fails closed and requires migration.
+Read-only source requests have no delete/rename/copy path. Exact keys are preserved in D1; keys containing standalone `.` or `..` URL segments remain discoverable but fail with `unsupported_key_path` because URL normalization would otherwise resolve a different key. Changing the source bucket or scope after catalog creation fails closed and requires migration. Metadata and subtitle credentials can be updated in owner Settings.
 
 ## Application layout
 
 - `src/worker.js`, `auth.js`, `catalog.js`: private API, Access JWT validation, common grant predicate, literal Unicode search, byte-range streams, account-bound progress.
 - `src/scans.js`, `jobs.js`, `index.ts`: transactional checkpoints, replacement invalidation, leased media jobs, singleton Container lifecycle and Cron.
-- `public/`: native browser UI, Library/Folders/details/settings, player controls, periodic progress, account-switch cleanup. Poster images cache in the browser's private HTTP cache under a revision-keyed URL and media ranges for an hour under `private, max-age`; every other response is `private, no-store`. No client data cache, service worker, movie metadata service, or UI framework.
+- `src/movies.js`, `src/tv.js`, `src/tmdb.js`, `src/subtitles.js`, `src/subtitle-auth.js`, `src/providers.js`: optional TMDB identification/artwork/cast and OpenSubtitles search/import with automatic account-token renewal and owner-managed provider settings. See [movie setup and limits](docs/MOVIES.md) and [TV shows and episodes](docs/TV.md). Provider credentials saved in Settings are encrypted in the existing controller's private storage; metadata and subtitle records follow source revisions and library grants.
+- `public/`: native browser UI, Library/Movies/TV shows/Folders/details/cast/settings, subtitle and player controls, periodic progress, account-switch cleanup. Artwork, imported subtitles and media ranges use the browser's private HTTP cache; catalog responses are `private, no-store`. No client data cache, service worker or UI framework.
 - `processor/main.py`: one subprocess at a time; loopback-only metered source proxy; pinned object/revision access; real FFprobe/FFmpeg posters. Source reads are reserved before signing and actual usage is logged. Malformed manifests cannot enable playlist/network demuxers; protocol/format allowlists and fixed subprocess arguments restrict decoding.
 - `src/backup.js`, `ops/`: R2-maintained export state/manifests, streaming checksum, 30-day retention, independent verification and conservative restore SQL.
 

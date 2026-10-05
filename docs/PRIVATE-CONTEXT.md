@@ -89,6 +89,8 @@ Only the owner can verify the existing private key stored in 1Password. Until th
 
 These archives exclude original videos and catalog SQL. [Data recovery](RECOVERY.md) covers SQL separately. Same-account R2 storage protects against workstation loss, not account loss; an independent copy of the encrypted archive is an optional additional safeguard.
 
+Provider credentials saved from owner Settings are encrypted in the existing MediaController Durable Object's private storage, not R2 or D1. The context and D1 backup workflows do not export those settings. Retain `PROVIDER_ENCRYPTION_KEY` and a way to re-enter TMDB/OpenSubtitles credentials in the operator vault. If Durable Object state is lost, restore the saved state with the original key where available; otherwise use Settings to disconnect and enter provider credentials again. Losing the key makes existing saved credentials unreadable.
+
 ## Public export and future changes
 
 Keep the current private repository and its history private. Editing the working tree does not remove historical identifiers.
